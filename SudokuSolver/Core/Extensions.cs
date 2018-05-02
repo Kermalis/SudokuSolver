@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SudokuSolver.Core
 {
@@ -52,6 +54,16 @@ namespace SudokuSolver.Core
             for (byte i = 0; i < amt; i++)
                 row[i] = input[(i * amt) + x];
             return row;
+        }
+
+        public static IEnumerable<T> UniteAll<T>(this IEnumerable<IEnumerable<T>> input)
+        {
+            var output = new T[0];
+            foreach (IEnumerable<T> i in input)
+            {
+                output = output.Union(i).ToArray();
+            }
+            return output;
         }
     }
 }
