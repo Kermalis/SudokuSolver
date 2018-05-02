@@ -133,7 +133,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
-                // Check for blockrows/blockcolumns that have a row/column that must have a number, to remove that number from the other blocks in that blockrow/blockcolumn
+                // Check for pointing pairs/triples
                 // For example: 
                 // 9 3 6     0 5 0     7 0 4
                 // 2 7 8     1 9 4     5 3 6
@@ -214,6 +214,15 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
+                // Check for hidden triples
+                for (byte i = 0; i < 9; i++)
+                {
+                    if (DoHiddenTriples(GetPointsInBlock(i))) changed = true;
+                    if (DoHiddenTriples(GetPointsInRow(i))) changed = true;
+                    if (DoHiddenTriples(GetPointsInColumn(i))) changed = true;
+                }
+                if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
+
                 // Check for naked quads
                 for (byte i = 0; i < 9; i++)
                 {
@@ -224,36 +233,70 @@ namespace SudokuSolver.Core
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
                 // Check for hidden quads
-                /*for (byte i = 0; i < 9; i++)
+                for (byte i = 0; i < 9; i++)
                 {
                     if (DoHiddenQuads(GetPointsInBlock(i))) changed = true;
                     if (DoHiddenQuads(GetPointsInRow(i))) changed = true;
                     if (DoHiddenQuads(GetPointsInColumn(i))) changed = true;
-                }*/
+                }
             } while (changed);
             sudokuBoard.Invalidate();
         }
 
-        // This is a copy-pasted "DoHiddenPairs" which will only work if all 4 values are in all 4 cells
         private bool DoHiddenQuads(Point[] points)
         {
+            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
+                return false;
             bool changed = false;
-            var hidden = new Dictionary<byte, Point[]>(4);
-            for (byte k = 1; k <= 9; k++)
+            for (byte j = 1; j <= 9; j++)
             {
-                if (hidden.Count < 4)
+                for (int k = j + 1; k <= 9; k++)
                 {
-                    Point[] p = points.Where(po => candidates[po.X][po.Y].Contains(k)).ToArray();
-                    if (p.Length == 4)
+                    for (int l = k + 1; l <= 9; l++)
                     {
-                        hidden.Add(k, p);
+                        for (int m = l + 1; m <= 9; m++)
+                        {
+                            var combo = new byte[] { j, (byte)k, (byte)l, (byte)m };
+                            var cells = new Point[0];
+                            foreach (byte b in combo)
+                            {
+                                cells = cells.Union(points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
+                            }
+                            if (cells.Length != 4
+                                || cells.Select(p => candidates[p.X][p.Y].Where(b => b != 0)).UniteAll().Count() == 4
+                                || combo.Any(b => !cells.Any(p => candidates[p.X][p.Y].Contains(b)))) continue;
+                            if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Select(i => (byte)i).Except(combo))) changed = true;
+                        }
                     }
                 }
-                else break;
             }
-            if (hidden.Count == 4 && Utils.AreAllSequencesEqual(hidden.Values.ToArray()))
+            return changed;
+        }
+
+        // Recursion pls
+        private bool DoHiddenTriples(Point[] points)
+        {
+            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
+                return false;
+            bool changed = false;
+            for (byte j = 1; j <= 9; j++)
             {
-                if (BlacklistCandidates(points.Except(hidden.Values.ElementAt(0)), hidden.Keys)) changed = true;
+                for (int k = j + 1; k <= 9; k++)
+                {
+                    for (int l = k + 1; l <= 9; l++)
+                    {
+                        var combo = new byte[] { j, (byte)k, (byte)l };
+                        var cells = new Point[0];
+                        foreach (byte b in combo)
+                        {
+                            cells = cells.Union(points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
+                        }
+                        if (cells.Length != 3 // There aren't 3 cells for our triple to be in
+                            || cells.Select(p => candidates[p.X][p.Y].Where(b => b != 0)).UniteAll().Count() == 3 // We already know it's a triple
+                            || combo.Any(b => !cells.Any(p => candidates[p.X][p.Y].Contains(b)))) continue; // If a number in our combo doesn't actually show up in any of our cells
+                        if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Select(i => (byte)i).Except(combo))) changed = true;
+                    }
+                }
             }
             return changed;
         }
@@ -261,6 +304,8 @@ namespace SudokuSolver.Core
         // TODO: Make these a better function
         private bool DoHiddenPairs(Point[] points)
         {
+            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
+                return false;
             bool changed = false;
             var hidden = new Dictionary<byte, Point[]>(2);
             for (byte k = 1; k <= 9; k++)
@@ -302,7 +347,7 @@ namespace SudokuSolver.Core
                         {
                             Point pm = points[m];
                             if (candidates[pm.X][pm.Y].Distinct().Count() == 1) continue;
-                            var cand = candidates[pj.X][pj.Y].Union(candidates[pk.X][pk.Y]).Union(candidates[pl.X][pl.Y]).Union(candidates[pm.X][pm.Y]).Where(b => b != 0);
+                            var cand = new byte[][] { candidates[pj.X][pj.Y], candidates[pk.X][pk.Y], candidates[pl.X][pl.Y], candidates[pm.X][pm.Y] }.UniteAll().Where(b => b != 0);
                             if (cand.Count() == 4)
                             {
                                 for (byte i = 0; i < 9; i++)
@@ -334,7 +379,7 @@ namespace SudokuSolver.Core
                     {
                         Point pl = points[l];
                         if (candidates[pl.X][pl.Y].Distinct().Count() == 1) continue;
-                        var cand = candidates[pj.X][pj.Y].Union(candidates[pk.X][pk.Y]).Union(candidates[pl.X][pl.Y]).Where(b => b != 0);
+                        var cand = new byte[][] { candidates[pj.X][pj.Y], candidates[pk.X][pk.Y], candidates[pl.X][pl.Y] }.UniteAll().Where(b => b != 0);
                         if (cand.Count() == 3)
                         {
                             for (byte i = 0; i < 9; i++)
