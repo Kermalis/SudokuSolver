@@ -20,3 +20,4 @@ Once design is done, of course, there will be no candidates showing, as every ce
 3. Can change most pair/triple/quad functions into recursion because they're mostly the same but with additional for loops
 4. Fix candidates for set cells; right now it empties on each loop and that's not efficient
 5. Find the name of the technique I use after I check for hidden singles
+6. Maybe lower the framework version
