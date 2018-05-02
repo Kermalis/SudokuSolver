@@ -224,16 +224,17 @@ namespace SudokuSolver.Core
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
                 // Check for hidden quads
-                for (byte i = 0; i < 9; i++)
+                /*for (byte i = 0; i < 9; i++)
                 {
                     if (DoHiddenQuads(GetPointsInBlock(i))) changed = true;
                     if (DoHiddenQuads(GetPointsInRow(i))) changed = true;
                     if (DoHiddenQuads(GetPointsInColumn(i))) changed = true;
-                }
+                }*/
             } while (changed);
             sudokuBoard.Invalidate();
         }
 
+        // This is a copy-pasted "DoHiddenPairs" which will only work if all 4 values are in all 4 cells
         private bool DoHiddenQuads(Point[] points)
         {
             bool changed = false;
@@ -372,7 +373,7 @@ namespace SudokuSolver.Core
             return changed;
         }
 
-        // Clear candidates from a blockrow/blockcolumn and returns true if something changed
+        // Clear candidates from a blockrow/blockcolumn and return true if something changed
         private bool RemoveBlockRowColCandidates(Point[][] blockrcs, bool doRows, byte ignoreBlock, byte rc, IEnumerable<byte> cand)
         {
             // Not optimized

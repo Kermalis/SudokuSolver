@@ -72,17 +72,15 @@ namespace SudokuSolver
                 Filter = "TXT files|*.txt",
                 InitialDirectory = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\..\\Puzzles")
             };
-            if (d.ShowDialog() == DialogResult.OK)
+            if (d.ShowDialog() != DialogResult.OK) return;
+
+            if (LoadPuzzle(d.FileName))
             {
-                if (LoadPuzzle(d.FileName))
-                {
-                    solveButton.Enabled = true;
-                }
-                else
-                {
-                    MessageBox.Show("Invalid puzzle data.");
-                    return;
-                }
+                solveButton.Enabled = true;
+            }
+            else
+            {
+                MessageBox.Show("Invalid puzzle data.");
             }
         }
     }
