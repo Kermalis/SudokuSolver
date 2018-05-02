@@ -12,12 +12,9 @@ Once design is done, of course, there will be no candidates showing, as every ce
 
 ## Todo
 
-1. Hidden Triples & Hidden Quads
-
-   The hidden triple puzzle currently included is solved without using the hidden triple technique  
-   Hidden quads are not working fully; I did not write a proper function yet
-2. Should keep row/column/block points in an array instead of generating these arrays several times per loop
-3. Can change most pair/triple/quad functions into recursion because they're mostly the same but with additional for loops
-4. Fix candidates for set cells; right now it empties on each loop and that's not efficient
-5. Find the name of the technique I use after I check for hidden singles
-6. Maybe lower the framework version
+1. Should keep row/column/block points in an array instead of generating these arrays several times per loop
+2. Can change most pair/triple/quad functions into recursion because they're mostly the same but with additional for loops
+3. Fix candidates for set cells; right now it empties on each loop and that's not efficient
+4. Maybe lower the framework version
+5. Consider stopping the byte craziness as it's just causing me to write more code instead
+6. Consider having a log on the form that contains the actions taken
