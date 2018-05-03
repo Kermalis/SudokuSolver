@@ -1,6 +1,7 @@
 # SudokuSolver
 
 A program that works out the solution to a sudoku puzzle by using human techniques and proofs.
+Because it logs the human techniques it uses, you can learn how to get past obstacles you found yourself in.
 
 It is designed with speed in mind, but there are still many improvements to be had. I'm currently just trying to write each technique before optimizing further.
 
