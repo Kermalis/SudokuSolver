@@ -8,8 +8,8 @@ namespace SudokuSolver.UI
     public class SudokuBoard : UserControl
     {
         private IContainer components = null;
-        private byte[][] originalBoard, board;
-        private byte[][][] candidates;
+        private int[][] originalBoard, board;
+        private int[][][] candidates;
 
         protected override void Dispose(bool disposing)
         {
@@ -43,18 +43,18 @@ namespace SudokuSolver.UI
             e.Graphics.DrawRectangle(Pens.Black, 0, 0, Width - 1, Height - 1);
 
             float w = (Width / 3f), h = (Height / 3f);
-            for (byte i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
-                for (byte j = 0; j < 3; j++)
+                for (int j = 0; j < 3; j++)
                 {
                     e.Graphics.DrawRectangle(Pens.Black, (w * i) + 1, (h * j) + 1, w - 2, h - 2);
                 }
             }
 
             w = (Width / 9f); h = (Height / 9f);
-            for (byte i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for (byte j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     e.Graphics.DrawRectangle(Pens.Black, w * i, h * j, w, h);
                     if (board == null || candidates == null) continue;
@@ -74,7 +74,7 @@ namespace SudokuSolver.UI
 
         private void SudokuBoard_Resize(object sender, EventArgs e) => Invalidate();
 
-        public void SetBoard(byte[][] newBoard, byte[][][] possibilities)
+        public void SetBoard(int[][] newBoard, int[][][] possibilities)
         {
             if (newBoard.Length != 9 || newBoard[0].Length != 9) return;
             board = newBoard;

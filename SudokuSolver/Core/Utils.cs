@@ -5,15 +5,15 @@ namespace SudokuSolver.Core
 {
     public static class Utils
     {
-        public static byte[][] CopyBoard(byte[][] source)
+        public static int[][] CopyBoard(int[][] source)
         {
             var len = source.Length;
-            var dest = new byte[9][];
+            var dest = new int[9][];
 
             for (byte i = 0; i < len; i++)
             {
                 var inner = source[i];
-                var newer = new byte[9];
+                var newer = new int[9];
                 Array.Copy(inner, newer, 9);
                 dest[i] = newer;
             }

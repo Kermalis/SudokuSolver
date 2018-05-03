@@ -6,19 +6,19 @@ namespace SudokuSolver.Core
 {
     public static class Extensions
     {
-        public static byte[] GetColumn(this byte[][] input, int x)
+        public static int[] GetColumn(this int[][] input, int x)
         {
             int amt = input[0].Length;
-            var column = new byte[amt];
-            Buffer.BlockCopy(input[x], 0, column, 0, amt);
+            var column = new int[amt];
+            Buffer.BlockCopy(input[x], 0, column, 0, amt*4);
             return column;
         }
 
-        public static byte[] GetRow(this byte[][] input, int x)
+        public static int[] GetRow(this int[][] input, int x)
         {
             int amt = input.Length;
-            var row = new byte[amt];
-            for(byte i = 0; i < amt; i++)
+            var row = new int[amt];
+            for(int i = 0; i < amt; i++)
                 row[i] = input[i][x];
             return row;
         }

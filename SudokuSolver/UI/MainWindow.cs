@@ -44,17 +44,17 @@ namespace SudokuSolver
         {
             string[] filelines = File.ReadAllLines(filename);
             if (filelines.Length != 9) return false;
-            var board = Utils.CreateJaggedArray<byte[][]>(9,9);
-            for (byte i = 0; i < 9; i++)
+            var board = Utils.CreateJaggedArray<int[][]>(9,9);
+            for (int i = 0; i < 9; i++)
             {
                 string[] split = filelines[i].Split(',');
                 if (split.Length != 9) return false;
-                for (byte j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     if (!string.IsNullOrEmpty(split[j]))
                     {
                         if (split[j].Length > 1) return false;
-                        board[j][i] = byte.Parse(split[j]);
+                        board[j][i] = int.Parse(split[j]);
                     }
                 }
             }
