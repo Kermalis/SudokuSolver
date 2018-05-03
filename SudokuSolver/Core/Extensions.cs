@@ -6,21 +6,6 @@ namespace SudokuSolver.Core
 {
     public static class Extensions
     {
-        // Only gonna be used for the boards so hardcoding 9s is fine
-        public static byte[][] ToJaggedArray(this byte[,] twoDimensionalArray)
-        {
-            var jaggedArray = new byte[9][];
-            for (byte i = 0; i < 9; i++)
-            {
-                jaggedArray[i] = new byte[9];
-                for (byte j = 0; j < 9; j++)
-                {
-                    jaggedArray[i][j] = twoDimensionalArray[j, i];
-                }
-            }
-            return jaggedArray;
-        }
-
         public static byte[] GetColumn(this byte[][] input, int x)
         {
             int amt = input[0].Length;
@@ -65,5 +50,7 @@ namespace SudokuSolver.Core
             }
             return output;
         }
+
+        public static string Print<T>(this IEnumerable<T> arr) => string.Format("({0})", string.Join(", ", arr));
     }
 }

@@ -1,43 +1,42 @@
 ﻿using SudokuSolver.Core;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace SudokuSolver
 {
     public partial class MainWindow : Form
     {
+        Stopwatch stopwatch;
         Solver solver;
 
         public MainWindow()
         {
             InitializeComponent();
             solveButton.Enabled = false;
-            toolStripStatusLabel1.Text = "";
-            /*byte[,] board = new byte[9, 9] {
-            { 6, 0, 0,     9, 0, 0,     0, 0, 0 },
-            { 0, 3, 0,     4, 0, 5,     0, 1, 0 },
-            { 7, 0, 8,     0, 1, 0,     5, 0, 0 },
-
-            { 9, 1, 7,     0, 6, 0,     4, 0, 0 },
-            { 0, 0, 0,     0, 4, 0,     0, 0, 0 },
-            { 0, 0, 4,     0, 8, 0,     9, 3, 2 },
-
-            { 0, 0, 5,     0, 2, 0,     8, 0, 6 },
-            { 0, 7, 0,     1, 0, 4,     0, 2, 0 },
-            { 0, 0, 0,     0, 0, 6,     0, 0, 1 }}; // Solves
-            solver = new Solver(sudokuBoard1, board.ToJaggedArray());*/
+            statusLabel.Text = "";
         }
 
         private void SolveButton_Click(object sender, EventArgs e)
         {
             solveButton.Enabled = false;
-            var sw = new Stopwatch();
-            sw.Start();
-            solver.Begin();
-            sw.Stop();
-            toolStripStatusLabel1.Text = string.Format("Solver finished in {0}.{1:D3} seconds.", sw.Elapsed.Seconds, sw.Elapsed.Milliseconds % 1000);
+            stopwatch = new Stopwatch();
+            var bw = new BackgroundWorker();
+            bw.DoWork += solver.DoWork;
+            bw.RunWorkerCompleted += Solver_Finished;
+            stopwatch.Start();
+            bw.RunWorkerAsync();
+        }
+
+        private void Solver_Finished(object sender, RunWorkerCompletedEventArgs e)
+        {
+            stopwatch.Stop();
+            sudokuBoard.Invalidate();
+            logTextBox.Text = (string)e.Result;
+            statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
         }
 
         // Return true if puzzle was loaded correctly
@@ -60,11 +59,11 @@ namespace SudokuSolver
                 }
             }
 
-            solver = new Solver(sudokuBoard1, board);
+            solver = new Solver(board, sudokuBoard);
             return true;
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void OpenPuzzle(object sender, EventArgs e)
         {
             OpenFileDialog d = new OpenFileDialog
             {
@@ -77,6 +76,7 @@ namespace SudokuSolver
             if (LoadPuzzle(d.FileName))
             {
                 solveButton.Enabled = true;
+                logTextBox.Text = "";
             }
             else
             {

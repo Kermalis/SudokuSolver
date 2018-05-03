@@ -8,13 +8,12 @@ The form draws the puzzle and its changes. If it gets stuck, the candidates for 
 
 ![Early Preview](https://i.imgur.com/jQpsa8P.png)
 
-Once design is done, of course, there will be no candidates showing, as every cell will be filled (assuming the input puzzle is valid).
+Once design is done, of course, there will be no candidates showing, as every cell will be filled (assuming the input puzzle is valid and has human-solvable steps).
 
-## Todo
+## To Do
 
 1. Should keep row/column/block points in an array instead of generating these arrays several times per loop
 2. Can change most pair/triple/quad functions into recursion because they're mostly the same but with additional for loops
-3. Fix candidates for set cells; right now it empties on each loop and that's not efficient
-4. Maybe lower the framework version
-5. Consider stopping the byte craziness as it's just causing me to write more code instead
-6. Consider having a log on the form that contains the actions taken
+3. Maybe lower the framework version
+4. Consider stopping the byte craziness as it's just causing me to write more code instead
+5. Building on the log, it could be possible to have an entire clickable list that shows the board through each change it made
