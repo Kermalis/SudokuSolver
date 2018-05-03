@@ -78,7 +78,7 @@ namespace SudokuSolver.Core
                 bl[i] = board[points[i].X][points[i].Y];
             return bl;
         }
-        
+
         public void DoWork(object sender, DoWorkEventArgs e)
         {
             bool changed, done;

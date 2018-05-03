@@ -48,7 +48,7 @@
             // splitContainer1
             // 
             this.splitContainer1.IsSplitterFixed = true;
-            this.splitContainer1.Location = new System.Drawing.Point(36, 58);
+            this.splitContainer1.Location = new System.Drawing.Point(35, 53);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -61,7 +61,6 @@
             this.splitContainer1.Size = new System.Drawing.Size(901, 450);
             this.splitContainer1.SplitterDistance = 450;
             this.splitContainer1.SplitterWidth = 1;
-            this.splitContainer1.TabIndex = 0;
             // 
             // logTextBox
             // 
@@ -72,14 +71,12 @@
             this.logTextBox.ReadOnly = true;
             this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.logTextBox.Size = new System.Drawing.Size(450, 450);
-            this.logTextBox.TabIndex = 0;
             // 
             // solveButton
             // 
-            this.solveButton.Location = new System.Drawing.Point(449, 27);
+            this.solveButton.Location = new System.Drawing.Point(448, 27);
             this.solveButton.Name = "solveButton";
             this.solveButton.Size = new System.Drawing.Size(75, 23);
-            this.solveButton.TabIndex = 1;
             this.solveButton.Text = "Solve";
             this.solveButton.UseVisualStyleBackColor = true;
             this.solveButton.Click += new System.EventHandler(this.SolveButton_Click);
@@ -91,7 +88,6 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(971, 24);
-            this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -113,10 +109,9 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 535);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 530);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(971, 22);
-            this.statusStrip1.TabIndex = 3;
+            this.statusStrip1.Size = new System.Drawing.Size(971, 24);
             this.statusStrip1.Text = "statusStrip1";
             // 
             // statusLabel
@@ -133,13 +128,12 @@
             this.sudokuBoard.Margin = new System.Windows.Forms.Padding(0);
             this.sudokuBoard.Name = "sudokuBoard";
             this.sudokuBoard.Size = new System.Drawing.Size(450, 450);
-            this.sudokuBoard.TabIndex = 0;
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(971, 557);
+            this.ClientSize = new System.Drawing.Size(971, 554);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.solveButton);
             this.Controls.Add(this.splitContainer1);
