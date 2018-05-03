@@ -7,7 +7,7 @@ It is designed with speed in mind, but there are still many improvements to be h
 
 The form draws the puzzle and its changes. If it gets stuck, the candidates for each cell will be shown for debugging:
 
-![Early Preview](https://i.imgur.com/bIIEAYe.png)
+![Early Preview](https://i.imgur.com/yTBUkGg.png)
 
 Once design is done, of course, there will be no candidates showing, as every cell will be filled (assuming the input puzzle is valid and has human-solvable steps).
 
