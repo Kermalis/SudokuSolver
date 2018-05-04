@@ -57,5 +57,7 @@ namespace SudokuSolver.Core
 
         public int[] GetRegion() => Points.Select(p => _board[p.X][p.Y]).ToArray();
         public int[][] GetCandidates() => Points.Select(p => _candidates[p.X][p.Y]).ToArray();
+
+        public Point[] GetPointsWithCandidate(int value) => Points.Where(p => _candidates[p.X][p.Y].Contains(value)).ToArray();
     }
 }

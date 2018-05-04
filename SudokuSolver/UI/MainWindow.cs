@@ -44,7 +44,7 @@ namespace SudokuSolver
         {
             string[] filelines = File.ReadAllLines(filename);
             if (filelines.Length != 9) return false;
-            var board = Utils.CreateJaggedArray<int[][]>(9,9);
+            var board = Utils.CreateJaggedArray<int[][]>(9, 9);
             for (int i = 0; i < 9; i++)
             {
                 string[] split = filelines[i].Split(',');

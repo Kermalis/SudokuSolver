@@ -45,7 +45,7 @@ namespace SudokuSolver.Core
 
         public static bool AreAllSequencesEqual<T>(params T[][] sequences)
         {
-            for (int i = 0; i < sequences.Length-1; i++)
+            for (int i = 0; i < sequences.Length - 1; i++)
             {
                 if (!sequences[i].SequenceEqual(sequences[i + 1]))
                     return false;
