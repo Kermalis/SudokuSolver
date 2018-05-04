@@ -17,8 +17,10 @@ namespace SudokuSolver.Core
     class Region
     {
         public readonly Point[] Points;
+        int[][] _board;
+        int[][][] _candidates;
 
-        public Region(SudokuRegion region, int index)
+        public Region(SudokuRegion region, int index, int[][] board, int[][][] candidates)
         {
             switch(region)
             {
@@ -49,6 +51,11 @@ namespace SudokuSolver.Core
                         Points[i] = new Point(index, i);
                     break;
             }
+            _board = board;
+            _candidates = candidates;
         }
+
+        public int[] GetRegion() => Points.Select(p => _board[p.X][p.Y]).ToArray();
+        public int[][] GetCandidates() => Points.Select(p => _candidates[p.X][p.Y]).ToArray();
     }
 }

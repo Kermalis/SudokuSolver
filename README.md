@@ -13,7 +13,6 @@ Once design is done, of course, there will be no candidates showing, as every ce
 
 ## To Do
 
-1. Can change most pair/triple/quad functions into recursion because they're mostly the same but with additional for loops
+1. Can change most naked & hidden pair/triple/quad functions into recursion because they're mostly the same but with additional loops
 2. Maybe lower the framework version
 3. Building on the log, it could be possible to have an entire clickable list that shows the board through each change it made
-4. Write region functions instead of the same LINQ functions everywhere in the solver

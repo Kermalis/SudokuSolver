@@ -28,7 +28,7 @@ namespace SudokuSolver.Core
                 var rs = new Region[9];
                 for (int i = 0; i < 9; i++)
                 {
-                    rs[i] = new Region(region, i);
+                    rs[i] = new Region(region, i, board, candidates);
                 }
                 regions.Add(region, rs);
             }
@@ -46,7 +46,6 @@ namespace SudokuSolver.Core
         private void Log(string s) => log += s + Environment.NewLine;
 
         private int CoordsToBlock(int x, int y) => (x / 3) + (3 * (y / 3));
-        private int[] GetBlock(int block) => regions[SudokuRegion.Block][block].Points.Select(p => board[p.X][p.Y]).ToArray();
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
@@ -61,12 +60,12 @@ namespace SudokuSolver.Core
                 // Update candidates, then check for naked singles
                 for (int i = 0; i < 9; i++)
                 {
-                    int[] column = board.GetColumn(i);
+                    int[] column = regions[SudokuRegion.Column][i].GetRegion();
                     for (int j = 0; j < 9; j++)
                     {
                         if (board[i][j] != 0) continue;
 
-                        int[] row = board.GetRow(j), block = GetBlock(CoordsToBlock(i, j));
+                        int[] row = regions[SudokuRegion.Row][j].GetRegion(), block = regions[SudokuRegion.Block][CoordsToBlock(i, j)].GetRegion();
                         Point point = new Point(i, j);
                         for (int k = 1; k <= 9; k++)
                         {
@@ -171,51 +170,51 @@ namespace SudokuSolver.Core
                 // Check for naked pairs
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoNakedPairs(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoNakedPairs(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoNakedPairs(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoNakedPairs(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoNakedPairs(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoNakedPairs(regions[SudokuRegion.Column][i])) changed = true;
                 }
                 if (changed) continue;
                 // Check for hidden pairs
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenPairs(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoHiddenPairs(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoHiddenPairs(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoHiddenPairs(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoHiddenPairs(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoHiddenPairs(regions[SudokuRegion.Column][i])) changed = true;
                 }
                 if (changed) continue;
 
                 // Check for naked triples
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoNakedTriples(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoNakedTriples(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoNakedTriples(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoNakedTriples(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoNakedTriples(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoNakedTriples(regions[SudokuRegion.Column][i])) changed = true;
                 }
                 if (changed) continue;
                 // Check for hidden triples
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenTriples(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoHiddenTriples(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoHiddenTriples(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoHiddenTriples(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoHiddenTriples(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoHiddenTriples(regions[SudokuRegion.Column][i])) changed = true;
                 }
                 if (changed) continue;
 
                 // Check for naked quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoNakedQuads(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoNakedQuads(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoNakedQuads(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoNakedQuads(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoNakedQuads(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoNakedQuads(regions[SudokuRegion.Column][i])) changed = true;
                 }
                 if (changed) continue;
                 // Check for hidden quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenQuads(regions[SudokuRegion.Block][i].Points)) changed = true;
-                    if (DoHiddenQuads(regions[SudokuRegion.Row][i].Points)) changed = true;
-                    if (DoHiddenQuads(regions[SudokuRegion.Column][i].Points)) changed = true;
+                    if (DoHiddenQuads(regions[SudokuRegion.Block][i])) changed = true;
+                    if (DoHiddenQuads(regions[SudokuRegion.Row][i])) changed = true;
+                    if (DoHiddenQuads(regions[SudokuRegion.Column][i])) changed = true;
                 }
             } while (changed);
 
@@ -223,9 +222,9 @@ namespace SudokuSolver.Core
         }
 
         // TODO: Change into recursion
-        private bool DoHiddenQuads(Point[] points)
+        private bool DoHiddenQuads(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
                 return false;
             bool changed = false;
             for (int j = 1; j <= 9; j++)
@@ -240,7 +239,7 @@ namespace SudokuSolver.Core
                             var cells = new Point[0];
                             foreach (int b in combo)
                             {
-                                cells = cells.Union(points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
+                                cells = cells.Union(region.Points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
                             }
                             if (cells.Length != 4
                                 || cells.Select(p => candidates[p.X][p.Y].Where(b => b != 0)).UniteAll().Count() == 4
@@ -253,9 +252,9 @@ namespace SudokuSolver.Core
             }
             return changed;
         }
-        private bool DoHiddenTriples(Point[] points)
+        private bool DoHiddenTriples(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
                 return false;
             bool changed = false;
             for (int j = 1; j <= 9; j++)
@@ -268,7 +267,7 @@ namespace SudokuSolver.Core
                         var cells = new Point[0];
                         foreach (int b in combo)
                         {
-                            cells = cells.Union(points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
+                            cells = cells.Union(region.Points.Where(p => candidates[p.X][p.Y].Contains(b))).ToArray();
                         }
                         if (cells.Length != 3 // There aren't 3 cells for our triple to be in
                             || cells.Select(p => candidates[p.X][p.Y].Where(b => b != 0)).UniteAll().Count() == 3 // We already know it's a triple
@@ -280,9 +279,9 @@ namespace SudokuSolver.Core
             }
             return changed;
         }
-        private bool DoHiddenPairs(Point[] points)
+        private bool DoHiddenPairs(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
                 return false;
             bool changed = false;
             var hidden = new Dictionary<int, Point[]>(2);
@@ -290,7 +289,7 @@ namespace SudokuSolver.Core
             {
                 if (hidden.Count < 2)
                 {
-                    Point[] p = points.Where(po => candidates[po.X][po.Y].Contains(k)).ToArray();
+                    Point[] p = region.Points.Where(po => candidates[po.X][po.Y].Contains(k)).ToArray();
                     if (p.Length == 2)
                     {
                         hidden.Add(k, p);
@@ -301,33 +300,33 @@ namespace SudokuSolver.Core
             var values = hidden.Values.ToArray();
             if (hidden.Count == 2 && Utils.AreAllSequencesEqual(values))
             {
-                if (BlacklistCandidates(points.Except(values[0]), hidden.Keys)) changed = true;
+                if (BlacklistCandidates(region.Points.Except(values[0]), hidden.Keys)) changed = true;
                 Log("Hidden pair", "{0}: {1}", values[0].Print(), hidden.Keys.Print());
             }
             return changed;
         }
 
         // TODO: Change into recursion
-        private bool DoNakedQuads(Point[] points)
+        private bool DoNakedQuads(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
                 return false;
             bool changed = false;
             for (int j = 0; j < 9; j++)
             {
-                Point pj = points[j];
+                Point pj = region.Points[j];
                 if (candidates[pj.X][pj.Y].Distinct().Count() == 1) continue;
                 for (int k = j + 1; k < 9; k++)
                 {
-                    Point pk = points[k];
+                    Point pk = region.Points[k];
                     if (candidates[pk.X][pk.Y].Distinct().Count() == 1) continue;
                     for (int l = k + 1; l < 9; l++)
                     {
-                        Point pl = points[l];
+                        Point pl = region.Points[l];
                         if (candidates[pl.X][pl.Y].Distinct().Count() == 1) continue;
                         for (int m = l + 1; m < 9; m++)
                         {
-                            Point pm = points[m];
+                            Point pm = region.Points[m];
                             if (candidates[pm.X][pm.Y].Distinct().Count() == 1) continue;
                             var ps = new Point[] { pj, pk, pl, pm };
                             var cand = ps.Select(p => candidates[p.X][p.Y]).UniteAll().Where(b => b != 0).ToArray();
@@ -336,7 +335,7 @@ namespace SudokuSolver.Core
                                 for (int i = 0; i < 9; i++)
                                 {
                                     if (j == i || k == i || l == i || m == i) continue; // Don't blacklist in our quad's cells
-                                    if (BlacklistCandidates(points[i], cand)) changed = true;
+                                    if (BlacklistCandidates(region.Points[i], cand)) changed = true;
                                 }
                                 if (changed) Log("Naked quadruple", "{0}: {1}", ps.Print(), cand.Print());
                             }
@@ -346,22 +345,22 @@ namespace SudokuSolver.Core
             }
             return changed;
         }
-        private bool DoNakedTriples(Point[] points)
+        private bool DoNakedTriples(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
                 return false;
             bool changed = false;
             for (int j = 0; j < 9; j++)
             {
-                Point pj = points[j];
+                Point pj = region.Points[j];
                 if (candidates[pj.X][pj.Y].Distinct().Count() == 1) continue;
                 for (int k = j + 1; k < 9; k++)
                 {
-                    Point pk = points[k];
+                    Point pk = region.Points[k];
                     if (candidates[pk.X][pk.Y].Distinct().Count() == 1) continue;
                     for (int l = k + 1; l < 9; l++)
                     {
-                        Point pl = points[l];
+                        Point pl = region.Points[l];
                         if (candidates[pl.X][pl.Y].Distinct().Count() == 1) continue;
                         var ps = new Point[] { pj, pk, pl };
                         var cand = ps.Select(p => candidates[p.X][p.Y]).UniteAll().Where(b => b != 0).ToArray();
@@ -370,7 +369,7 @@ namespace SudokuSolver.Core
                             for (int i = 0; i < 9; i++)
                             {
                                 if (j == i || k == i || l == i) continue; // Don't blacklist in our triple's cells
-                                if (BlacklistCandidates(points[i], cand)) changed = true;
+                                if (BlacklistCandidates(region.Points[i], cand)) changed = true;
                             }
                             if (changed) Log("Naked triple", "{0}: {1}", ps.Print(), cand.Print());
                         }
@@ -379,11 +378,11 @@ namespace SudokuSolver.Core
             }
             return changed;
         }
-        private bool DoNakedPairs(Point[] points)
+        private bool DoNakedPairs(Region region)
         {
-            if (points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
                 return false;
-            var cand = points.Select(p => candidates[p.X][p.Y]).ToArray();
+            var cand = region.GetCandidates();
             for (int j = 0; j < cand.Length; j++)
                 cand[j] = cand[j].Distinct().Where(b => b != 0).ToArray();
             bool changed = false;
@@ -397,9 +396,9 @@ namespace SudokuSolver.Core
                         for (int i = 0; i < 9; i++)
                         {
                             if (j == i || k == i) continue; // Don't blacklist in our pair's cells
-                            if (BlacklistCandidates(points[i], cand[j])) changed = true;
+                            if (BlacklistCandidates(region.Points[i], cand[j])) changed = true;
                         }
-                        if (changed) Log("Naked pair", "{0}: {1}", new Point[] { points[j], points[k] }.Print(), cand[j].Print());
+                        if (changed) Log("Naked pair", "{0}: {1}", new Point[] { region.Points[j], region.Points[k] }.Print(), cand[j].Print());
                     }
                 }
             }
