@@ -45,7 +45,7 @@ namespace SudokuSolver.Core
         private void Log(string format, params object[] args) => Log(string.Format(format, args));
         private void Log(string s) => log += s + Environment.NewLine;
 
-        private int CoordsToBlock(int x, int y) => (x / 3) + (3 * (y / 3));
+        private int GetBlock(Point p) => (p.X / 3) + (3 * (p.Y / 3));
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
@@ -65,8 +65,8 @@ namespace SudokuSolver.Core
                     {
                         if (board[i][j] != 0) continue;
 
-                        int[] row = regions[SudokuRegion.Row][j].GetRegion(), block = regions[SudokuRegion.Block][CoordsToBlock(i, j)].GetRegion();
                         Point point = new Point(i, j);
+                        int[] row = regions[SudokuRegion.Row][j].GetRegion(), block = regions[SudokuRegion.Block][GetBlock(point)].GetRegion();
                         for (int k = 1; k <= 9; k++)
                         {
                             if (!specials.TryGetValue(point, out List<int> blacklist)) blacklist = new List<int>();
@@ -113,6 +113,41 @@ namespace SudokuSolver.Core
                     }
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
+
+                // Check for locked row/column candidates
+                for (int i = 0; i < 9; i++)
+                {
+                    Region row = regions[SudokuRegion.Row][i], col = regions[SudokuRegion.Column][i];
+                    int[][] rowCand = row.GetCandidates(), colCand = col.GetCandidates();
+                    for (int k = 1; k <= 9; k++)
+                    {
+                        var rowWith = row.Points.Where(p => candidates[p.X][p.Y].Contains(k));
+                        var colWith = col.Points.Where(p => candidates[p.X][p.Y].Contains(k));
+
+                        // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
+                        if (rowWith.Count() == 3 || rowWith.Count() == 2)
+                        {
+                            var blocks = rowWith.Select(p => GetBlock(p)).Distinct().ToArray();
+                            if (blocks.Length == 1)
+                                if (BlacklistCandidates(regions[SudokuRegion.Block][blocks[0]].Points.Except(rowWith), new int[] { k }))
+                                {
+                                    changed = true;
+                                    Log("Locked candidate", "Row {0} locks block {1}, {2}: {3}", i, blocks[0], rowWith.Print(), k);
+                                }
+                        }
+                        if (colWith.Count() == 3 || colWith.Count() == 2)
+                        {
+                            var blocks = colWith.Select(p => GetBlock(p)).Distinct().ToArray();
+                            if (blocks.Length == 1)
+                                if (BlacklistCandidates(regions[SudokuRegion.Block][blocks[0]].Points.Except(colWith), new int[] { k }))
+                                {
+                                    changed = true;
+                                    Log("Locked candidate", "Column {0} locks block {1}, {2}: {3}", i, blocks[0], colWith.Print(), k);
+                                }
+                        }
+                    }
+                }
+                if (changed) continue;
 
                 // Check for pointing pairs/triples
                 // For example: 
@@ -335,7 +370,7 @@ namespace SudokuSolver.Core
                                 for (int i = 0; i < 9; i++)
                                 {
                                     if (j == i || k == i || l == i || m == i) continue; // Don't blacklist in our quad's cells
-                                    if (BlacklistCandidates(region.Points[i], cand)) changed = true;
+                                    if (BlacklistCandidates(new Point[] { region.Points[i] }, cand)) changed = true;
                                 }
                                 if (changed) Log("Naked quadruple", "{0}: {1}", ps.Print(), cand.Print());
                             }
@@ -369,7 +404,7 @@ namespace SudokuSolver.Core
                             for (int i = 0; i < 9; i++)
                             {
                                 if (j == i || k == i || l == i) continue; // Don't blacklist in our triple's cells
-                                if (BlacklistCandidates(region.Points[i], cand)) changed = true;
+                                if (BlacklistCandidates(new Point[] { region.Points[i] }, cand)) changed = true;
                             }
                             if (changed) Log("Naked triple", "{0}: {1}", ps.Print(), cand.Print());
                         }
@@ -396,7 +431,7 @@ namespace SudokuSolver.Core
                         for (int i = 0; i < 9; i++)
                         {
                             if (j == i || k == i) continue; // Don't blacklist in our pair's cells
-                            if (BlacklistCandidates(region.Points[i], cand[j])) changed = true;
+                            if (BlacklistCandidates(new Point[] { region.Points[i] }, cand[j])) changed = true;
                         }
                         if (changed) Log("Naked pair", "{0}: {1}", new Point[] { region.Points[j], region.Points[k] }.Print(), cand[j].Print());
                     }
@@ -421,7 +456,6 @@ namespace SudokuSolver.Core
         }
 
         // Blacklist the following candidates at the following cells
-        private bool BlacklistCandidates(Point p, IEnumerable<int> cand) => BlacklistCandidates(new Point[] { p }, cand);
         private bool BlacklistCandidates(IEnumerable<Point> points, IEnumerable<int> cand)
         {
             bool changed = false;
