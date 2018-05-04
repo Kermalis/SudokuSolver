@@ -16,6 +16,8 @@ namespace SudokuSolver.Core
 
         string log = "";
 
+        string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
+
         public Solver(int[][] inBoard, UI.SudokuBoard control)
         {
             board = inBoard;
@@ -247,9 +249,9 @@ namespace SudokuSolver.Core
                 // Check for hidden pairs
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenPairs(regions[SudokuRegion.Block][i])) changed = true;
-                    if (DoHiddenPairs(regions[SudokuRegion.Row][i])) changed = true;
-                    if (DoHiddenPairs(regions[SudokuRegion.Column][i])) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Block][i], 2)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Row][i], 2)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Column][i], 2)) changed = true;
                 }
                 if (changed) continue;
 
@@ -264,9 +266,9 @@ namespace SudokuSolver.Core
                 // Check for hidden triples
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenTriples(regions[SudokuRegion.Block][i])) changed = true;
-                    if (DoHiddenTriples(regions[SudokuRegion.Row][i])) changed = true;
-                    if (DoHiddenTriples(regions[SudokuRegion.Column][i])) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Block][i], 3)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Row][i], 3)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Column][i], 3)) changed = true;
                 }
                 if (changed) continue;
 
@@ -281,96 +283,47 @@ namespace SudokuSolver.Core
                 // Check for hidden quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (DoHiddenQuads(regions[SudokuRegion.Block][i])) changed = true;
-                    if (DoHiddenQuads(regions[SudokuRegion.Row][i])) changed = true;
-                    if (DoHiddenQuads(regions[SudokuRegion.Column][i])) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Block][i], 4)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Row][i], 4)) changed = true;
+                    if (FindHidden(regions[SudokuRegion.Column][i], 4)) changed = true;
                 }
             } while (changed);
 
             e.Result = log;
         }
 
-        // TODO: Change into recursion
-        private bool DoHiddenQuads(Region region)
+        private bool FindHidden(Region region, int amt)
         {
-            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 4) // If there are only 4 cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == amt) // If there are only "amt" cells with non-zero candidates, we don't have to waste our time
                 return false;
-            bool changed = false;
-            for (int j = 1; j <= 9; j++)
-            {
-                for (int k = j + 1; k <= 9; k++)
-                {
-                    for (int l = k + 1; l <= 9; l++)
-                    {
-                        for (int m = l + 1; m <= 9; m++)
-                        {
-                            var combo = new int[] { j, k, l, m };
-                            var cells = new Point[0];
-                            foreach (int v in combo)
-                            {
-                                cells = cells.Union(region.GetPointsWithCandidate(v)).ToArray();
-                            }
-                            if (cells.Length != 4
-                                || cells.Select(p => candidates[p.X][p.Y].Where(v => v != 0)).UniteAll().Count() == 4
-                                || combo.Any(v => !cells.Any(p => candidates[p.X][p.Y].Contains(v)))) continue;
-                            if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Except(combo))) changed = true;
-                            Log("Hidden quadruple", "{0}: {1}", cells.Print(), combo.Print());
-                        }
-                    }
-                }
-            }
-            return changed;
+            return DoHidden(region, new int[amt], 0, amt);
         }
-        private bool DoHiddenTriples(Region region)
+        private bool DoHidden(Region region, int[] cand, int loop, int amt)
         {
-            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 3) // If there are only 3 cells with non-zero candidates, we don't have to waste our time
-                return false;
             bool changed = false;
-            for (int j = 1; j <= 9; j++)
+            if (loop == amt)
             {
-                for (int k = j + 1; k <= 9; k++)
+                var cells = new Point[0];
+                foreach (int v in cand)
                 {
-                    for (int l = k + 1; l <= 9; l++)
-                    {
-                        var combo = new int[] { j, k, l };
-                        var cells = new Point[0];
-                        foreach (int v in combo)
-                        {
-                            cells = cells.Union(region.GetPointsWithCandidate(v)).ToArray();
-                        }
-                        if (cells.Length != 3 // There aren't 3 cells for our triple to be in
-                            || cells.Select(p => candidates[p.X][p.Y].Where(v => v != 0)).UniteAll().Count() == 3 // We already know it's a triple
-                            || combo.Any(v => !cells.Any(p => candidates[p.X][p.Y].Contains(v)))) continue; // If a number in our combo doesn't actually show up in any of our cells
-                        if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Except(combo))) changed = true;
-                        Log("Hidden triple", "{0}: {1}", cells.Print(), combo.Print());
-                    }
+                    cells = cells.Union(region.GetPointsWithCandidate(v)).ToArray();
+                }
+                if (cells.Length != amt // There aren't "amt" cells for our tuple to be in
+                    || cells.Select(p => candidates[p.X][p.Y].Where(v => v != 0)).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
+                    || cand.Any(v => !cells.Any(p => candidates[p.X][p.Y].Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
+                if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Except(cand)))
+                {
+                    Log("Hidden " + tupleStr[amt], "{0}: {1}", cells.Print(), cand.Print());
+                    return true;
                 }
             }
-            return changed;
-        }
-        private bool DoHiddenPairs(Region region)
-        {
-            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == 2) // If there are only 2 cells with non-zero candidates, we don't have to waste our time
-                return false;
-            bool changed = false;
-            var hidden = new Dictionary<int, Point[]>(2);
-            for (int v = 1; v <= 9; v++)
+            else
             {
-                if (hidden.Count < 2)
+                for (int i = cand[loop == 0 ? loop : loop - 1] + 1; i <= 9; i++)
                 {
-                    Point[] p = region.GetPointsWithCandidate(v);
-                    if (p.Length == 2)
-                    {
-                        hidden.Add(v, p);
-                    }
+                    cand[loop] = i;
+                    if (DoHidden(region, cand, loop + 1, amt)) changed = true;
                 }
-                else break;
-            }
-            var values = hidden.Values.ToArray();
-            if (hidden.Count == 2 && Utils.AreAllSequencesEqual(values))
-            {
-                if (BlacklistCandidates(region.Points.Except(values[0]), hidden.Keys)) changed = true;
-                Log("Hidden pair", "{0}: {1}", values[0].Print(), hidden.Keys.Print());
             }
             return changed;
         }
