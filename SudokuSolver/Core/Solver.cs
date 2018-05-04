@@ -114,6 +114,39 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
+                // Check for X-Wings
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int k = 1; k <= 9; k++) // values
+                    {
+                        Region row1 = regions[SudokuRegion.Row][i], col1 = regions[SudokuRegion.Column][i];
+                        Point[] row1P = row1.Points.Where(p => candidates[p.X][p.Y].Contains(k)).ToArray(), col1P = col1.Points.Where(p => candidates[p.X][p.Y].Contains(k)).ToArray();
+                        for (int j = i + 1; j < 9; j++)
+                        {
+                            Region row2 = regions[SudokuRegion.Row][j], col2 = regions[SudokuRegion.Column][j];
+                            Point[] row2P = row2.Points.Where(p => candidates[p.X][p.Y].Contains(k)).ToArray(), col2P = col2.Points.Where(p => candidates[p.X][p.Y].Contains(k)).ToArray();
+                            
+                            if (row1P.Length == 2 && row2P.Length == 2 && row1P[0].X == row2P[0].X && row1P[1].X == row2P[1].X)
+                            {
+                                if (BlacklistCandidates(regions[SudokuRegion.Column][row1P[0].X].Points.Union(regions[SudokuRegion.Column][row1P[1].X].Points).Except(row1P).Except(row2P), new int[] { k }))
+                                {
+                                    changed = true;
+                                    Log("X-Wing", "{0} & {1}: {2}", row1P.Print(), row2P.Print(), k);
+                                }
+                            }
+                            if (col1P.Length == 2 && col2P.Length == 2 && col1P[0].Y == col2P[0].Y && col1P[1].Y == col2P[1].Y)
+                            {
+                                if (BlacklistCandidates(regions[SudokuRegion.Row][col1P[0].Y].Points.Union(regions[SudokuRegion.Row][col1P[1].Y].Points).Except(col1P).Except(col2P), new int[] { k }))
+                                {
+                                    changed = true;
+                                    Log("X-Wing", "{0} & {1}: {2}", col1P.Print(), col2P.Print(), k);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (changed) continue;
+
                 // Check for locked row/column candidates
                 for (int i = 0; i < 9; i++)
                 {
