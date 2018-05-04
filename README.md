@@ -13,7 +13,6 @@ Once design is done, of course, there will be no candidates showing, as every ce
 
 ## To Do
 
-1. Can change most naked & hidden pair/triple/quad functions into recursion because they're mostly the same but with additional loops
-2. Maybe lower the framework version
-3. Building on the log, it could be possible to have an entire clickable list that shows the board through each change it made
-4. Find a hidden triple puzzle that this program actually uses the hidden triple technique on
+1. Maybe lower the framework version
+2. Building on the log, it could be possible to have an entire clickable list that shows the board through each change it made
+3. Find a hidden triple puzzle that this program actually uses the hidden triple technique on
