@@ -22,7 +22,7 @@ namespace SudokuSolver.Core
 
         public Region(SudokuRegion region, int index, int[][] board, int[][][] candidates)
         {
-            switch(region)
+            switch (region)
             {
                 case SudokuRegion.Block:
                     Points = new Point[9];

@@ -11,6 +11,8 @@ The form draws the puzzle and its changes. If it gets stuck, the candidates for 
 
 Once design is done, of course, there will be no candidates showing, as every cell will be filled (assuming the input puzzle is valid and has human-solvable steps).
 
+Big thanks to http://www.sudokuwiki.org for providing a lot of information on tough Sudoku techniques.
+
 ## To Do
 
 1. Maybe lower the framework version

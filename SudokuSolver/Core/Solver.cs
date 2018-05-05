@@ -211,8 +211,7 @@ namespace SudokuSolver.Core
                 #endregion
 
                 // Check for X-Wings, Swordfish & Jellyfish
-                if (FindFish(2) || FindFish(3) || FindFish(4)) changed = true;
-                if (changed) continue;
+                if (FindFish(2) || FindFish(3) || FindFish(4)) { changed = true; continue; }
 
                 #region Naked tuples & Hidden tuples
 
@@ -221,7 +220,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindNaked(regions[SudokuRegion.Block][i], 2)
                         || FindNaked(regions[SudokuRegion.Row][i], 2)
-                        || FindNaked(regions[SudokuRegion.Column][i], 2)) changed = true;
+                        || FindNaked(regions[SudokuRegion.Column][i], 2)) { changed = true; break; }
                 }
                 if (changed) continue;
                 // Check for hidden pairs
@@ -229,7 +228,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindHidden(regions[SudokuRegion.Block][i], 2)
                         || FindHidden(regions[SudokuRegion.Row][i], 2)
-                        || FindHidden(regions[SudokuRegion.Column][i], 2)) changed = true;
+                        || FindHidden(regions[SudokuRegion.Column][i], 2)) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -238,7 +237,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindNaked(regions[SudokuRegion.Block][i], 3)
                         || FindNaked(regions[SudokuRegion.Row][i], 3)
-                        || FindNaked(regions[SudokuRegion.Column][i], 3)) changed = true;
+                        || FindNaked(regions[SudokuRegion.Column][i], 3)) { changed = true; break; }
                 }
                 if (changed) continue;
                 // Check for hidden triples
@@ -246,7 +245,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindHidden(regions[SudokuRegion.Block][i], 3)
                         || FindHidden(regions[SudokuRegion.Row][i], 3)
-                        || FindHidden(regions[SudokuRegion.Column][i], 3)) changed = true;
+                        || FindHidden(regions[SudokuRegion.Column][i], 3)) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -255,7 +254,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindNaked(regions[SudokuRegion.Block][i], 4)
                         || FindNaked(regions[SudokuRegion.Row][i], 4)
-                        || FindNaked(regions[SudokuRegion.Column][i], 4)) changed = true;
+                        || FindNaked(regions[SudokuRegion.Column][i], 4)) { changed = true; break; }
                 }
                 if (changed) continue;
                 // Check for hidden quads
@@ -263,7 +262,7 @@ namespace SudokuSolver.Core
                 {
                     if (FindHidden(regions[SudokuRegion.Block][i], 4)
                         || FindHidden(regions[SudokuRegion.Row][i], 4)
-                        || FindHidden(regions[SudokuRegion.Column][i], 4)) changed = true;
+                        || FindHidden(regions[SudokuRegion.Column][i], 4)) { changed = true; break; }
                 }
 
                 #endregion
@@ -292,7 +291,7 @@ namespace SudokuSolver.Core
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
 
-                if (rowLengths.Max() == amt && rowLengths.Min() >= 2 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
+                if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
                     if (BlacklistCandidates(row2D.Select(p => regions[SudokuRegion.Column][p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
@@ -301,7 +300,7 @@ namespace SudokuSolver.Core
                         return true;
                     }
                 }
-                if (colLengths.Max() == amt && colLengths.Min() >= 2 && colPoints.Select(parr => parr.Select(p => p.Y)).UniteAll().Count() <= amt)
+                if (colLengths.Max() == amt && colLengths.Min() > 0 && colPoints.Select(parr => parr.Select(p => p.Y)).UniteAll().Count() <= amt)
                 {
                     var col2D = colPoints.UniteAll();
                     if (BlacklistCandidates(col2D.Select(p => regions[SudokuRegion.Row][p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
