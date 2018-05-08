@@ -110,6 +110,13 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
+                // Check for XYZ-Wings
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindXYZWing(Board.Rows[i]) || FindXYZWing(Board.Columns[i])) { changed = true; break; }
+                }
+                if (changed) continue;
+
                 // Check for pointing pairs/triples
                 // For example: 
                 // 9 3 6     0 5 0     7 0 4
@@ -202,18 +209,54 @@ namespace SudokuSolver.Core
             e.Result = log;
         }
 
-        // Find Y-Wing
+        bool FindXYZWing(Region region)
+        {
+            bool changed = false;
+            var points2 = region.Points.Where(p => board[p].Candidates.Count == 2).ToArray();
+            var points3 = region.Points.Where(p => board[p].Candidates.Count == 3).ToArray();
+            if (points2.Length > 0 && points3.Length > 0)
+            {
+                for (int i = 0; i < points2.Length; i++)
+                {
+                    Point p2 = points2[i];
+                    for (int j = 0; j < points3.Length; j++)
+                    {
+                        Point p3 = points3[j];
+                        if (board[p2].Candidates.Intersect(board[p3].Candidates).Count() != 2) continue;
+
+                        var p3Sees = board[p3].GetCanSeePoints().Except(region.Points)
+                            .Where(p => board[p].Candidates.Count == 2 // If it has 2 candidates
+                            && board[p].Candidates.Intersect(board[p3].Candidates).Count() == 2 // Shares them both with p3
+                            && board[p].Candidates.Intersect(board[p2].Candidates).Count() == 1); // And shares one with p2
+                        if (p3Sees.Count() == 0) continue;
+
+                        foreach (Point p2_2 in p3Sees)
+                        {
+                            var allSee = board[p2].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints()).Intersect(board[p2_2].GetCanSeePoints());
+                            var allHave = board[p2].Candidates.Intersect(board[p3].Candidates).Intersect(board[p2_2].Candidates).ToArray(); // Will be 1 Length
+                            if (board.BlacklistCandidates(allSee, allHave))
+                            {
+                                changed = true;
+                                Log("XYZ-Wing", "{0} see {1}: {2}", new Point[] { p2, p3, p2_2 }.Print(), allSee.Print(), allHave[0]);
+                            }
+                        }
+                    }
+                }
+            }
+            return changed;
+        }
+
         bool FindYWing(Region region)
         {
             var points = region.Points.Where(p => board[p].Candidates.Count == 2).ToArray();
             if (points.Length > 1)
             {
-                for (int j = 0; j < points.Length; j++)
+                for (int i = 0; i < points.Length; i++)
                 {
-                    Point p1 = points[j];
-                    for (int k = j + 1; k < points.Length; k++)
+                    Point p1 = points[i];
+                    for (int j = i + 1; j < points.Length; j++)
                     {
-                        Point p2 = points[k];
+                        Point p2 = points[j];
                         var inter = board[p1].Candidates.Intersect(board[p2].Candidates).ToArray();
                         if (inter.Length != 1) continue;
 
