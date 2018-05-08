@@ -50,6 +50,7 @@
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Core\Region.cs" />
     <Compile Include="Core\Solver.cs" />
+    <Compile Include="Core\SPoint.cs" />
     <Compile Include="Core\Utils.cs" />
     <Compile Include="UI\MainWindow.cs">
       <SubType>Form</SubType>

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Collections.Generic;
 
 namespace SudokuSolver.Core
 {
@@ -18,7 +16,7 @@ namespace SudokuSolver.Core
             _board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
-                    _board[x][y] = new Cell(this, inBoard[x][y], new Point(x, y));
+                    _board[x][y] = new Cell(this, inBoard[x][y], new SPoint(x, y));
             Regions = new Region[][] { Rows = new Region[9], Columns = new Region[9], Blocks = new Region[9] };
             for (int i = 0; i < 9; i++)
             {
@@ -35,16 +33,16 @@ namespace SudokuSolver.Core
         {
             get => _board[x][y];
         }
-        public Cell this[Point p]
+        public Cell this[SPoint p]
         {
             get => _board[p.X][p.Y];
         }
 
         // Blacklist the following candidates at the following cells
-        public bool BlacklistCandidates(IEnumerable<Point> points, IEnumerable<int> cand)
+        public bool BlacklistCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand)
         {
             bool changed = false;
-            foreach (Point p in points)
+            foreach (SPoint p in points)
                 foreach (int v in cand)
                     if (this[p].Candidates.Remove(v)) changed = true;
             return changed;

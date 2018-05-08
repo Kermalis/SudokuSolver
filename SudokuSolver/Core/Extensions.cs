@@ -32,6 +32,6 @@ namespace SudokuSolver.Core
             return output;
         }
 
-        public static string Print<T>(this IEnumerable<T> arr) => string.Format("({0})", string.Join(", ", arr));
+        public static string Print<T>(this IEnumerable<T> arr) => "( " + string.Join(", ", arr) + " )";
     }
 }

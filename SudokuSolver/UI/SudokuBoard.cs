@@ -8,9 +8,10 @@ namespace SudokuSolver.UI
 {
     public class SudokuBoard : UserControl
     {
-        IContainer components = null;
+        IContainer components;
         Board board;
         bool candidates = false;
+        int d = 20;
 
         protected override void Dispose(bool disposing)
         {
@@ -27,7 +28,7 @@ namespace SudokuSolver.UI
             base.AutoScaleMode = AutoScaleMode.Font;
             this.DoubleBuffered = true;
             base.Name = "SudokuBoard";
-            base.Size = new Size(400, 400);
+            base.Size = new Size(450 + d, 450 + d);
             base.Paint += new PaintEventHandler(SudokuBoard_Paint);
             base.Resize += new EventHandler(SudokuBoard_Resize);
             base.ResumeLayout(false);
@@ -38,29 +39,35 @@ namespace SudokuSolver.UI
         void SudokuBoard_Paint(object sender, PaintEventArgs e)
         {
             Font f = base.Font, fMini = new Font(f.FontFamily, f.Size / 1.75f);
-            e.Graphics.DrawRectangle(Pens.Black, 0, 0, Width - 1, Height - 1);
+            float rWidth = Width - d, rHeight = Height - d;
 
-            float w = (Width / 3f), h = (Height / 3f);
-            for (int i = 0; i < 3; i++)
+            e.Graphics.DrawRectangle(Pens.Black, d, d, rWidth - 1, rHeight - 1);
+
+            float w = (rWidth / 3f), h = (rHeight / 3f);
+            for (int x = 0; x < 3; x++)
             {
-                for (int j = 0; j < 3; j++)
+                for (int y = 0; y < 3; y++)
                 {
-                    e.Graphics.DrawRectangle(Pens.Black, (w * i) + 1, (h * j) + 1, w - 2, h - 2);
+                    e.Graphics.DrawRectangle(Pens.Black, w * x + d + 1, h * y + d + 1, w - 2, h - 2);
                 }
             }
 
-            w = (Width / 9f); h = (Height / 9f);
+            w = (rWidth / 9f); h = (rHeight / 9f);
             for (int x = 0; x < 9; x++)
             {
+                float xoff = w * x;
+                e.Graphics.DrawString((x + 1).ToString(), fMini, Brushes.Black, xoff + w / 1.3f, 0);
+                e.Graphics.DrawString(((char)(x + 65)).ToString(), fMini, Brushes.Black, 0, xoff + w / 1.4f);
                 for (int y = 0; y < 9; y++)
                 {
-                    e.Graphics.DrawRectangle(Pens.Black, w * x, h * y, w, h);
+                    float yoff = h * y;
+                    e.Graphics.DrawRectangle(Pens.Black, xoff + d, yoff + d, w, h);
                     if (board == null) continue;
                     if (board[x, y] != 0)
-                        e.Graphics.DrawString(board[x, y].ToString(), f, board[x, y].Value == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, w * x, h * y);
+                        e.Graphics.DrawString(board[x, y].ToString(), f, board[x, y].Value == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
                     else if (candidates)
                         foreach (int v in board[x, y].Candidates)
-                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, (w * x) + (((v - 1) % 3) * (w / 3)), (h * y) + (((v - 1) / 3) * (h / 3)));
+                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, xoff + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
                 }
             }
         }

@@ -7,7 +7,7 @@ It is designed with speed in mind, but there are still many improvements to be h
 
 The form draws the puzzle and its changes. If it gets stuck, the candidates for each cell will be shown for debugging:
 
-![Early Preview](https://i.imgur.com/D435Mb6.png)
+![Preview](https://i.imgur.com/jtspTYq.png)
 
 Once design is done, of course, there will be no candidates showing, as every cell will be filled (assuming the input puzzle is valid and has human-solvable steps).
 
@@ -20,3 +20,4 @@ Big thanks to http://www.sudokuwiki.org for providing a lot of information on to
 
    This would slow down the solver and increase memory usage, so disabling logging should be an option
 3. Find a hidden triple puzzle that this program actually uses the hidden triple technique on
+4. A way to toggle techniques with the UI

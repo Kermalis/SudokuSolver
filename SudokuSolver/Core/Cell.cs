@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace SudokuSolver.Core
@@ -10,19 +9,19 @@ namespace SudokuSolver.Core
         public readonly int OriginalValue;
         public readonly int Block;
         public readonly HashSet<int> Candidates;
-        public readonly Point Coordinate;
+        public readonly SPoint Point;
 
         Board _board;
 
-        public Cell(Board board, int value, Point point)
+        public Cell(Board board, int value, SPoint point)
         {
             _board = board;
             OriginalValue = Value = value;
-            Coordinate = point;
+            Point = point;
             Block = (point.X / 3) + (3 * (point.Y / 3));
             Candidates = new HashSet<int>(Enumerable.Range(1, 9));
         }
-        
+
         public void Set(int value)
         {
             Value = value;
@@ -30,10 +29,11 @@ namespace SudokuSolver.Core
             _board.BlacklistCandidates(GetCanSeePoints(), new int[] { value });
         }
 
+        public override int GetHashCode() => Point.GetHashCode();
         public override bool Equals(object obj)
         {
             if (obj is Cell other)
-                return other.Value == Value && other.Coordinate == Coordinate;
+                return other.Value == Value && other.Point.Equals(Point);
             return false;
         }
         public override string ToString() => Value.ToString();
@@ -46,7 +46,7 @@ namespace SudokuSolver.Core
         public static bool operator !=(Cell lhs, Cell rhs) => !lhs.Equals(rhs);
 
         // Returns other cells the input cell can see
-        internal Cell[] GetCanSee() => Board.Columns[Coordinate.X].Cells.Union(Board.Rows[Coordinate.Y].Cells).Union(Board.Blocks[Block].Cells).Except(new Cell[] { this }).ToArray();
-        internal Point[] GetCanSeePoints() => GetCanSee().Select(c => c.Coordinate).ToArray();
+        internal Cell[] GetCanSee() => Board.Columns[Point.X].Cells.Union(Board.Rows[Point.Y].Cells).Union(Board.Blocks[Block].Cells).Except(new Cell[] { this }).ToArray();
+        internal SPoint[] GetCanSeePoints() => GetCanSee().Select(c => c.Point).ToArray();
     }
 }

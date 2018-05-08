@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Linq;
 
 namespace SudokuSolver.Core
@@ -15,12 +14,9 @@ namespace SudokuSolver.Core
         string[] fishStr = new string[] { "", "", "X-Wing", "Swordfish", "Jellyfish" };
         string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
 
-        public Solver(int[][] inBoard, UI.SudokuBoard control)
-        {
-            control.SetBoard(board = new Board(inBoard));
-        }
+        public Solver(int[][] inBoard, UI.SudokuBoard control) => control.SetBoard(board = new Board(inBoard));
 
-        void Log(string technique, string format, params object[] args) => Log(technique + "\t" + format, args);
+        void Log(string technique, string format, params object[] args) => Log($"{technique,-20}" + format, args);
         void Log(string format, params object[] args) => Log(string.Format(format, args));
         void Log(string s) => log += s + Environment.NewLine;
 
@@ -39,7 +35,7 @@ namespace SudokuSolver.Core
                 {
                     for (int y = 0; y < 9; y++)
                     {
-                        Point p = new Point(x, y);
+                        SPoint p = new SPoint(x, y);
                         if (board[p] != 0) continue;
 
                         done = false;
@@ -63,7 +59,7 @@ namespace SudokuSolver.Core
                     {
                         for (int v = 1; v <= 9; v++)
                         {
-                            Point[] p = r[i].GetPointsWithCandidate(v);
+                            SPoint[] p = r[i].GetPointsWithCandidate(v);
                             if (p.Length == 1)
                             {
                                 board[p[0]].Set(v);
@@ -127,7 +123,7 @@ namespace SudokuSolver.Core
                 // I did not make this a dedicated function because the loops would happen more than they already do
                 for (int i = 0; i < 3; i++)
                 {
-                    Point[][] blockrow = new Point[3][], blockcol = new Point[3][];
+                    SPoint[][] blockrow = new SPoint[3][], blockcol = new SPoint[3][];
                     for (int r = 0; r < 3; r++)
                     {
                         blockrow[r] = Board.Blocks[r + (i * 3)].Points;
@@ -218,24 +214,24 @@ namespace SudokuSolver.Core
             {
                 for (int i = 0; i < points2.Length; i++)
                 {
-                    Point p2 = points2[i];
+                    SPoint p2 = points2[i];
                     for (int j = 0; j < points3.Length; j++)
                     {
-                        Point p3 = points3[j];
+                        SPoint p3 = points3[j];
                         if (board[p2].Candidates.Intersect(board[p3].Candidates).Count() != 2) continue;
 
                         var p3Sees = board[p3].GetCanSeePoints().Except(region.Points)
                             .Where(p => board[p].Candidates.Count == 2 // If it has 2 candidates
                             && board[p].Candidates.Intersect(board[p3].Candidates).Count() == 2 // Shares them both with p3
                             && board[p].Candidates.Intersect(board[p2].Candidates).Count() == 1); // And shares one with p2
-                        foreach (Point p2_2 in p3Sees)
+                        foreach (SPoint p2_2 in p3Sees)
                         {
                             var allSee = board[p2].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints()).Intersect(board[p2_2].GetCanSeePoints());
                             var allHave = board[p2].Candidates.Intersect(board[p3].Candidates).Intersect(board[p2_2].Candidates).ToArray(); // Will be 1 Length
                             if (board.BlacklistCandidates(allSee, allHave))
                             {
                                 changed = true;
-                                Log("XYZ-Wing", "{0} see {1}: {2}", new Point[] { p2, p3, p2_2 }.Print(), allSee.Print(), allHave[0]);
+                                Log("XYZ-Wing", "{0} see {1}: {2}", new SPoint[] { p2, p3, p2_2 }.Print(), allSee.Print(), allHave[0]);
                             }
                         }
                     }
@@ -251,10 +247,10 @@ namespace SudokuSolver.Core
             {
                 for (int i = 0; i < points.Length; i++)
                 {
-                    Point p1 = points[i];
+                    SPoint p1 = points[i];
                     for (int j = i + 1; j < points.Length; j++)
                     {
-                        Point p2 = points[j];
+                        SPoint p2 = points[j];
                         var inter = board[p1].Candidates.Intersect(board[p2].Candidates).ToArray();
                         if (inter.Length != 1) continue;
 
@@ -262,19 +258,19 @@ namespace SudokuSolver.Core
                         int other1 = board[p1].Candidates.Except(a).ToArray()[0],
                             other2 = board[p2].Candidates.Except(a).ToArray()[0];
 
-                        var b = new Point[] { p1, p2 };
-                        foreach (Point point in b)
+                        var b = new SPoint[] { p1, p2 };
+                        foreach (SPoint point in b)
                         {
                             var p3a = board[point].GetCanSeePoints().Except(points).Where(p => board[p].Candidates.Count == 2 && board[p].Candidates.Intersect(new int[] { other1, other2 }).Count() == 2).ToArray();
                             if (p3a.Length == 1) // Example: p1 and p3 see each other, so remove similarities from p2 and p3
                             {
-                                Point p3 = p3a[0];
-                                Point pOther = b.Single(p => p != point);
+                                SPoint p3 = p3a[0];
+                                SPoint pOther = b.Single(p => p != point);
                                 var common = board[pOther].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints());
                                 var cand = board[pOther].Candidates.Intersect(board[p3].Candidates).ToArray(); // Will just be 1 candidate
                                 if (board.BlacklistCandidates(common, cand))
                                 {
-                                    Log("Y-Wing", "{0}: {1}", new Point[] { p1, p2, p3 }.Print(), cand[0]);
+                                    Log("Y-Wing", "{0}: {1}", new SPoint[] { p1, p2, p3 }.Print(), cand[0]);
                                     return true;
                                 }
                             }
@@ -298,7 +294,7 @@ namespace SudokuSolver.Core
         {
             if (loop == amt)
             {
-                Point[][] rowPoints = indexes.Select(i => Board.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
+                SPoint[][] rowPoints = indexes.Select(i => Board.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
                     colPoints = indexes.Select(i => Board.Columns[i].GetPointsWithCandidate(cand)).ToArray();
 
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
@@ -345,7 +341,7 @@ namespace SudokuSolver.Core
                 if (blocks.Length == 1)
                     if (board.BlacklistCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
                     {
-                        Log("Locked candidate", "{4} {0} locks block {1}, {2}: {3}", rc, blocks[0], with.Print(), value, doRows ? "Row" : "Column");
+                        Log("Locked candidate", "{4} {0} locks block {1}, {2}: {3}", rc + 1, blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
                         return true;
                     }
             }
@@ -389,9 +385,9 @@ namespace SudokuSolver.Core
         {
             if (region.Points.Count(p => board[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
                 return false;
-            return DoNaked(region, 0, amt, new Point[amt], new int[amt]);
+            return DoNaked(region, 0, amt, new SPoint[amt], new int[amt]);
         }
-        bool DoNaked(Region region, int loop, int amt, Point[] points, int[] indexes)
+        bool DoNaked(Region region, int loop, int amt, SPoint[] points, int[] indexes)
         {
             if (loop == amt)
             {
@@ -409,7 +405,7 @@ namespace SudokuSolver.Core
             {
                 for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
                 {
-                    Point p = region.Points[i];
+                    SPoint p = region.Points[i];
                     if (board[p].Candidates.Count == 0) continue;
                     points[loop] = p;
                     indexes[loop] = i;
@@ -420,7 +416,7 @@ namespace SudokuSolver.Core
         }
 
         // Clear candidates from a blockrow/blockcolumn and return true if something changed
-        bool RemoveBlockRowColCandidates(Point[][] blockrcs, bool doRows, int current, int ignoreBlock, int rc, IEnumerable<int> cand)
+        bool RemoveBlockRowColCandidates(SPoint[][] blockrcs, bool doRows, int current, int ignoreBlock, int rc, IEnumerable<int> cand)
         {
             bool changed = false;
             for (int i = 0; i < 3; i++)
@@ -429,7 +425,7 @@ namespace SudokuSolver.Core
                 var rcs = doRows ? blockrcs[i].GetRow(rc) : blockrcs[i].GetColumn(rc);
                 if (board.BlacklistCandidates(rcs, cand)) changed = true;
             }
-            if (changed) Log("Pointing couple", "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current, ignoreBlock, rc, cand.Print());
+            if (changed) Log("Pointing couple", "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, rc + 1, cand.Print());
             return changed;
         }
     }
