@@ -228,8 +228,6 @@ namespace SudokuSolver.Core
                             .Where(p => board[p].Candidates.Count == 2 // If it has 2 candidates
                             && board[p].Candidates.Intersect(board[p3].Candidates).Count() == 2 // Shares them both with p3
                             && board[p].Candidates.Intersect(board[p2].Candidates).Count() == 1); // And shares one with p2
-                        if (p3Sees.Count() == 0) continue;
-
                         foreach (Point p2_2 in p3Sees)
                         {
                             var allSee = board[p2].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints()).Intersect(board[p2_2].GetCanSeePoints());
