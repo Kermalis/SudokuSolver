@@ -17,4 +17,6 @@ Big thanks to http://www.sudokuwiki.org for providing a lot of information on to
 
 1. Maybe lower the framework version
 2. Building on the log, it could be possible to have an entire clickable list that shows the board through each change it made
+
+   This would slow down the solver and increase memory usage, so disabling logging should be an option
 3. Find a hidden triple puzzle that this program actually uses the hidden triple technique on

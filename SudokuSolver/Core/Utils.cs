@@ -5,22 +5,6 @@ namespace SudokuSolver.Core
 {
     public static class Utils
     {
-        public static int[][] CopyBoard(int[][] source)
-        {
-            var len = source.Length;
-            var dest = new int[9][];
-
-            for (byte i = 0; i < len; i++)
-            {
-                var inner = source[i];
-                var newer = new int[9];
-                Array.Copy(inner, newer, 9);
-                dest[i] = newer;
-            }
-
-            return dest;
-        }
-
         public static T CreateJaggedArray<T>(params int[] lengths)
         {
             return (T)InitializeJaggedArray(typeof(T).GetElementType(), 0, lengths);

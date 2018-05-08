@@ -28,9 +28,7 @@ namespace SudokuSolver.Core
         {
             var output = new T[0];
             foreach (IEnumerable<T> i in input)
-            {
                 output = output.Union(i).ToArray();
-            }
             return output;
         }
 

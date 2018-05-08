@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SudokuSolver.Core;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -7,9 +8,9 @@ namespace SudokuSolver.UI
 {
     public class SudokuBoard : UserControl
     {
-        private IContainer components = null;
-        private int[][] originalBoard, board;
-        private int[][][] candidates;
+        IContainer components = null;
+        Board board;
+        bool candidates = false;
 
         protected override void Dispose(bool disposing)
         {
@@ -20,7 +21,7 @@ namespace SudokuSolver.UI
             base.Dispose(disposing);
         }
 
-        private void InitializeComponent()
+        void InitializeComponent()
         {
             base.SuspendLayout();
             base.AutoScaleMode = AutoScaleMode.Font;
@@ -32,12 +33,9 @@ namespace SudokuSolver.UI
             base.ResumeLayout(false);
         }
 
-        public SudokuBoard()
-        {
-            InitializeComponent();
-        }
+        public SudokuBoard() => InitializeComponent();
 
-        private void SudokuBoard_Paint(object sender, PaintEventArgs e)
+        void SudokuBoard_Paint(object sender, PaintEventArgs e)
         {
             Font f = base.Font, fMini = new Font(f.FontFamily, f.Size / 1.75f);
             e.Graphics.DrawRectangle(Pens.Black, 0, 0, Width - 1, Height - 1);
@@ -52,35 +50,32 @@ namespace SudokuSolver.UI
             }
 
             w = (Width / 9f); h = (Height / 9f);
-            for (int i = 0; i < 9; i++)
+            for (int x = 0; x < 9; x++)
             {
-                for (int j = 0; j < 9; j++)
+                for (int y = 0; y < 9; y++)
                 {
-                    e.Graphics.DrawRectangle(Pens.Black, w * i, h * j, w, h);
-                    if (board == null || candidates == null) continue;
-                    if (board[i][j] != 0)
-                        e.Graphics.DrawString(board[i][j].ToString(), f, board[i][j] == originalBoard[i][j] ? Brushes.Black : Brushes.DeepSkyBlue, w * i, h * j);
-                    else
-                    {
-                        for (int k = 0; k < 9; k++)
-                        {
-                            if (candidates[i][j][k] != 0)
-                                e.Graphics.DrawString(candidates[i][j][k].ToString(), fMini, Brushes.Crimson, (w * i) + ((k % 3) * (w / 3)), (h * j) + ((k / 3) * (h / 3)));
-                        }
-                    }
+                    e.Graphics.DrawRectangle(Pens.Black, w * x, h * y, w, h);
+                    if (board == null) continue;
+                    if (board[x, y] != 0)
+                        e.Graphics.DrawString(board[x, y].ToString(), f, board[x, y].Value == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, w * x, h * y);
+                    else if (candidates)
+                        foreach (int v in board[x, y].Candidates)
+                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, (w * x) + (((v - 1) % 3) * (w / 3)), (h * y) + (((v - 1) / 3) * (h / 3)));
                 }
             }
         }
 
-        private void SudokuBoard_Resize(object sender, EventArgs e) => Invalidate();
-
-        public void SetBoard(int[][] newBoard, int[][][] possibilities)
+        void SudokuBoard_Resize(object sender, EventArgs e) => ReDraw(candidates);
+        public void ReDraw(bool showCandidates)
         {
-            if (newBoard.Length != 9 || newBoard[0].Length != 9) return;
-            board = newBoard;
-            originalBoard = Core.Utils.CopyBoard(board);
-            candidates = possibilities;
+            candidates = showCandidates;
             Invalidate();
+        }
+
+        public void SetBoard(Board newBoard)
+        {
+            board = newBoard;
+            ReDraw(false);
         }
     }
 }

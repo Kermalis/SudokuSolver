@@ -34,7 +34,7 @@ namespace SudokuSolver
         private void Solver_Finished(object sender, RunWorkerCompletedEventArgs e)
         {
             stopwatch.Stop();
-            sudokuBoard.Invalidate();
+            sudokuBoard.ReDraw(true);
             logTextBox.Text = (string)e.Result;
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
         }

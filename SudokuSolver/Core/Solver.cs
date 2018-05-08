@@ -8,11 +8,7 @@ namespace SudokuSolver.Core
 {
     class Solver
     {
-        int[][] board;
-        int[][][] candidates;
-        Dictionary<Point, HashSet<int>> blacklist; // A table of blacklisted candidates from more complicated logic
-
-        Dictionary<SudokuRegion, Region[]> regions;
+        Board board;
 
         string log = "";
 
@@ -21,34 +17,12 @@ namespace SudokuSolver.Core
 
         public Solver(int[][] inBoard, UI.SudokuBoard control)
         {
-            board = inBoard;
-            candidates = Utils.CreateJaggedArray<int[][][]>(9, 9, 9);
-            blacklist = new Dictionary<Point, HashSet<int>>();
-            control.SetBoard(board, candidates);
-            regions = new Dictionary<SudokuRegion, Region[]>(3);
-            foreach (SudokuRegion region in Enum.GetValues(typeof(SudokuRegion)))
-            {
-                var rs = new Region[9];
-                for (int i = 0; i < 9; i++)
-                {
-                    rs[i] = new Region(region, i, board, candidates);
-                }
-                regions.Add(region, rs);
-            }
+            control.SetBoard(board = new Board(inBoard));
         }
 
-        private void SetValue(Point p, int value) => SetValue(p.X, p.Y, value);
-        private void SetValue(int x, int y, int value)
-        {
-            board[x][y] = value;
-            candidates[x][y] = new int[9]; // Basically setting all candidates to 0 here
-        }
-
-        private void Log(string technique, string format, params object[] args) => Log(technique + "\t" + format, args);
-        private void Log(string format, params object[] args) => Log(string.Format(format, args));
-        private void Log(string s) => log += s + Environment.NewLine;
-
-        private int GetBlock(Point p) => (p.X / 3) + (3 * (p.Y / 3));
+        void Log(string technique, string format, params object[] args) => Log(technique + "\t" + format, args);
+        void Log(string format, params object[] args) => Log(string.Format(format, args));
+        void Log(string s) => log += s + Environment.NewLine;
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
@@ -60,98 +34,79 @@ namespace SudokuSolver.Core
 
                 Log("Loop");
 
-                // Update candidates, then check for naked singles
-                for (int i = 0; i < 9; i++)
+                // Check for naked singles or a completed puzzle
+                for (int x = 0; x < 9; x++)
                 {
-                    int[] column = regions[SudokuRegion.Column][i].GetRegion();
-                    for (int j = 0; j < 9; j++)
+                    for (int y = 0; y < 9; y++)
                     {
-                        if (board[i][j] != 0) continue;
+                        Point p = new Point(x, y);
+                        if (board[p] != 0) continue;
 
-                        Point point = new Point(i, j);
-                        int[] row = regions[SudokuRegion.Row][j].GetRegion(), block = regions[SudokuRegion.Block][GetBlock(point)].GetRegion();
-                        for (int v = 1; v <= 9; v++)
-                        {
-                            if (!blacklist.TryGetValue(point, out HashSet<int> specials)) specials = new HashSet<int>();
-                            if (!column.Contains(v) && !row.Contains(v) && !block.Contains(v) && !specials.Contains(v))
-                            {
-                                candidates[i][j][v - 1] = v;
-                                done = false;
-                            }
-                            else
-                            {
-                                candidates[i][j][v - 1] = 0;
-                            }
-                        }
+                        done = false;
                         // Check for naked singles
-                        var p = candidates[i][j].Where(v => v != 0).ToArray();
-                        if (p.Length == 1)
+                        var a = board[p].Candidates.ToArray();
+                        if (a.Length == 1)
                         {
-                            SetValue(point, p[0]);
-                            Log("Naked single", "{0}: {1}", point, p[0]);
+                            board[p].Set(a[0]);
+                            Log("Naked single", "{0}: {1}", p, a[0]);
                             changed = true;
-                            continue;
                         }
                     }
                 }
-                if (done)
-                {
-                    Log("Solver completed the puzzle.");
-                    break;
-                }
+                if (done) { Log("Solver completed the puzzle."); break; }
                 if (changed) continue;
 
                 // Check for hidden singles
                 for (int i = 0; i < 9; i++)
                 {
-                    Region r = regions[SudokuRegion.Block][i];
-                    for (int v = 1; v <= 9; v++)
+                    foreach (Region[] r in Board.Regions)
                     {
-                        Point[] p = r.GetPointsWithCandidate(v);
-                        if (p.Length == 1)
+                        for (int v = 1; v <= 9; v++)
                         {
-                            SetValue(p[0], v);
-                            Log("Hidden single", "{0}: {1}", p[0], v);
-                            changed = true;
+                            Point[] p = r[i].GetPointsWithCandidate(v);
+                            if (p.Length == 1)
+                            {
+                                board[p[0]].Set(v);
+                                Log("Hidden single", "{0}: {1}", p[0], v);
+                                changed = true;
+                            }
                         }
                     }
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
-                #region Locked candidates
+                // Check for naked pairs
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindNaked(Board.Blocks[i], 2)
+                        || FindNaked(Board.Rows[i], 2)
+                        || FindNaked(Board.Columns[i], 2)) { changed = true; break; }
+                }
+                if (changed) continue;
+
+                // Check for hidden pairs
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindHidden(Board.Blocks[i], 2)
+                        || FindHidden(Board.Rows[i], 2)
+                        || FindHidden(Board.Columns[i], 2)) { changed = true; break; }
+                }
+                if (changed) continue;
 
                 // Check for locked row/column candidates
                 for (int i = 0; i < 9; i++)
                 {
-                    Region row = regions[SudokuRegion.Row][i], col = regions[SudokuRegion.Column][i];
-                    int[][] rowCand = row.GetCandidates(), colCand = col.GetCandidates();
                     for (int v = 1; v <= 9; v++)
                     {
-                        var rowWith = row.GetPointsWithCandidate(v);
-                        var colWith = col.GetPointsWithCandidate(v);
-
-                        // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
-                        if (rowWith.Count() == 3 || rowWith.Count() == 2)
-                        {
-                            var blocks = rowWith.Select(p => GetBlock(p)).Distinct().ToArray();
-                            if (blocks.Length == 1)
-                                if (BlacklistCandidates(regions[SudokuRegion.Block][blocks[0]].Points.Except(rowWith), new int[] { v }))
-                                {
-                                    changed = true;
-                                    Log("Locked candidate", "Row {0} locks block {1}, {2}: {3}", i, blocks[0], rowWith.Print(), v);
-                                }
-                        }
-                        if (colWith.Count() == 3 || colWith.Count() == 2)
-                        {
-                            var blocks = colWith.Select(p => GetBlock(p)).Distinct().ToArray();
-                            if (blocks.Length == 1)
-                                if (BlacklistCandidates(regions[SudokuRegion.Block][blocks[0]].Points.Except(colWith), new int[] { v }))
-                                {
-                                    changed = true;
-                                    Log("Locked candidate", "Column {0} locks block {1}, {2}: {3}", i, blocks[0], colWith.Print(), v);
-                                }
-                        }
+                        if (FindLocked(true, i, v) || FindLocked(false, i, v)) changed = true;
                     }
+                }
+                if (changed) continue;
+
+                // Check for Y-Wings
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindYWing(Board.Rows[i]) || FindYWing(Board.Columns[i])) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -162,13 +117,14 @@ namespace SudokuSolver.Core
                 // 0 0 5     0 7 0     9 0 0
                 // The block on the left can only have 1s in the bottom row, so remove the possibility of 1s in the block on the right's bottom row
                 // A 1 will then be placed in the top spot of that block on the next loop, because it is the only available spot for a 1
+                // I did not make this a dedicated function because the loops would happen more than they already do
                 for (int i = 0; i < 3; i++)
                 {
                     Point[][] blockrow = new Point[3][], blockcol = new Point[3][];
                     for (int r = 0; r < 3; r++)
                     {
-                        blockrow[r] = regions[SudokuRegion.Block][r + (i * 3)].Points;
-                        blockcol[r] = regions[SudokuRegion.Block][i + (r * 3)].Points;
+                        blockrow[r] = Board.Blocks[r + (i * 3)].Points;
+                        blockcol[r] = Board.Blocks[i + (r * 3)].Points;
                     }
                     for (int r = 0; r < 3; r++) // 3 blocks in a blockrow/blockcolumn
                     {
@@ -176,13 +132,8 @@ namespace SudokuSolver.Core
                         for (int j = 0; j < 3; j++) // 3 rows/columns in block
                         {
                             // The 3 cells' candidates in a block's row/column
-                            List<int> thingyr = new List<int>(27), thingyc = new List<int>(27);
-                            foreach (int[] cell in blockrow[r].GetRow(j).Select(p => candidates[p.X][p.Y]))
-                                thingyr.AddRange(cell);
-                            foreach (int[] cell in blockcol[r].GetColumn(j).Select(p => candidates[p.X][p.Y]))
-                                thingyc.AddRange(cell);
-                            rowCand[j] = thingyr.Distinct().Where(v => v != 0).ToArray();
-                            colCand[j] = thingyc.Distinct().Where(v => v != 0).ToArray();
+                            rowCand[j] = blockrow[r].GetRow(j).Select(p => board[p].Candidates).UniteAll().ToArray();
+                            colCand[j] = blockcol[r].GetColumn(j).Select(p => board[p].Candidates).UniteAll().ToArray();
                         }
                         // Now check if a row has a distinct candidate
                         var zero_distinct = rowCand[0].Except(rowCand[1]).Except(rowCand[2]);
@@ -208,72 +159,93 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                #endregion
+                // Check for naked triples
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindNaked(Board.Blocks[i], 3)
+                        || FindNaked(Board.Rows[i], 3)
+                        || FindNaked(Board.Columns[i], 3)) { changed = true; break; }
+                }
+                if (changed) continue;
+
+                // Check for hidden triples
+                for (int i = 0; i < 9; i++)
+                {
+                    if (FindHidden(Board.Blocks[i], 3)
+                        || FindHidden(Board.Rows[i], 3)
+                        || FindHidden(Board.Columns[i], 3)) { changed = true; break; }
+                }
+                if (changed) continue;
 
                 // Check for X-Wings, Swordfish & Jellyfish
                 if (FindFish(2) || FindFish(3) || FindFish(4)) { changed = true; continue; }
 
-                #region Naked tuples & Hidden tuples
-
-                // Check for naked pairs
-                for (int i = 0; i < 9; i++)
-                {
-                    if (FindNaked(regions[SudokuRegion.Block][i], 2)
-                        || FindNaked(regions[SudokuRegion.Row][i], 2)
-                        || FindNaked(regions[SudokuRegion.Column][i], 2)) { changed = true; break; }
-                }
-                if (changed) continue;
-                // Check for hidden pairs
-                for (int i = 0; i < 9; i++)
-                {
-                    if (FindHidden(regions[SudokuRegion.Block][i], 2)
-                        || FindHidden(regions[SudokuRegion.Row][i], 2)
-                        || FindHidden(regions[SudokuRegion.Column][i], 2)) { changed = true; break; }
-                }
-                if (changed) continue;
-
-                // Check for naked triples
-                for (int i = 0; i < 9; i++)
-                {
-                    if (FindNaked(regions[SudokuRegion.Block][i], 3)
-                        || FindNaked(regions[SudokuRegion.Row][i], 3)
-                        || FindNaked(regions[SudokuRegion.Column][i], 3)) { changed = true; break; }
-                }
-                if (changed) continue;
-                // Check for hidden triples
-                for (int i = 0; i < 9; i++)
-                {
-                    if (FindHidden(regions[SudokuRegion.Block][i], 3)
-                        || FindHidden(regions[SudokuRegion.Row][i], 3)
-                        || FindHidden(regions[SudokuRegion.Column][i], 3)) { changed = true; break; }
-                }
-                if (changed) continue;
-
                 // Check for naked quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindNaked(regions[SudokuRegion.Block][i], 4)
-                        || FindNaked(regions[SudokuRegion.Row][i], 4)
-                        || FindNaked(regions[SudokuRegion.Column][i], 4)) { changed = true; break; }
+                    if (FindNaked(Board.Blocks[i], 4)
+                        || FindNaked(Board.Rows[i], 4)
+                        || FindNaked(Board.Columns[i], 4)) { changed = true; break; }
                 }
                 if (changed) continue;
+
                 // Check for hidden quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindHidden(regions[SudokuRegion.Block][i], 4)
-                        || FindHidden(regions[SudokuRegion.Row][i], 4)
-                        || FindHidden(regions[SudokuRegion.Column][i], 4)) { changed = true; break; }
+                    if (FindHidden(Board.Blocks[i], 4)
+                        || FindHidden(Board.Rows[i], 4)
+                        || FindHidden(Board.Columns[i], 4)) { changed = true; break; }
                 }
-
-                #endregion
 
             } while (changed);
 
             e.Result = log;
         }
 
+        // Find Y-Wing
+        bool FindYWing(Region region)
+        {
+            var points = region.Points.Where(p => board[p].Candidates.Count == 2).ToArray();
+            if (points.Length > 1)
+            {
+                for (int j = 0; j < points.Length; j++)
+                {
+                    Point p1 = points[j];
+                    for (int k = j + 1; k < points.Length; k++)
+                    {
+                        Point p2 = points[k];
+                        var inter = board[p1].Candidates.Intersect(board[p2].Candidates).ToArray();
+                        if (inter.Length != 1) continue;
+
+                        var a = new int[] { inter[0] };
+                        int other1 = board[p1].Candidates.Except(a).ToArray()[0],
+                            other2 = board[p2].Candidates.Except(a).ToArray()[0];
+
+                        var b = new Point[] { p1, p2 };
+                        foreach (Point point in b)
+                        {
+                            var p3a = board[point].GetCanSeePoints().Except(points).Where(p => board[p].Candidates.Count == 2 && board[p].Candidates.Intersect(new int[] { other1, other2 }).Count() == 2).ToArray();
+                            if (p3a.Length == 1) // Example: p1 and p3 see each other, so remove similarities from p2 and p3
+                            {
+                                Point p3 = p3a[0];
+                                Point pOther = b.Single(p => p != point);
+                                var common = board[pOther].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints());
+                                var cand = board[pOther].Candidates.Intersect(board[p3].Candidates).ToArray(); // Will just be 1 candidate
+                                if (board.BlacklistCandidates(common, cand))
+                                {
+                                    Log("Y-Wing", "{0}: {1}", new Point[] { p1, p2, p3 }.Print(), cand[0]);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         // Find X-Wing, Swordfish & Jellyfish
-        private bool FindFish(int amt)
+        bool FindFish(int amt)
         {
             for (int v = 1; v <= 9; v++)
             {
@@ -281,12 +253,12 @@ namespace SudokuSolver.Core
             }
             return false;
         }
-        private bool DoFish(int cand, int loop, int amt, int[] indexes)
+        bool DoFish(int cand, int loop, int amt, int[] indexes)
         {
             if (loop == amt)
             {
-                Point[][] rowPoints = indexes.Select(i => regions[SudokuRegion.Row][i].GetPointsWithCandidate(cand)).ToArray(),
-                    colPoints = indexes.Select(i => regions[SudokuRegion.Column][i].GetPointsWithCandidate(cand)).ToArray();
+                Point[][] rowPoints = indexes.Select(i => Board.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
+                    colPoints = indexes.Select(i => Board.Columns[i].GetPointsWithCandidate(cand)).ToArray();
 
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
@@ -294,7 +266,7 @@ namespace SudokuSolver.Core
                 if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
-                    if (BlacklistCandidates(row2D.Select(p => regions[SudokuRegion.Column][p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
+                    if (board.BlacklistCandidates(row2D.Select(p => Board.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
                     {
                         Log(fishStr[amt], "{0}: {1}", row2D.Print(), cand);
                         return true;
@@ -303,7 +275,7 @@ namespace SudokuSolver.Core
                 if (colLengths.Max() == amt && colLengths.Min() > 0 && colPoints.Select(parr => parr.Select(p => p.Y)).UniteAll().Count() <= amt)
                 {
                     var col2D = colPoints.UniteAll();
-                    if (BlacklistCandidates(col2D.Select(p => regions[SudokuRegion.Row][p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
+                    if (board.BlacklistCandidates(col2D.Select(p => Board.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
                     {
                         Log(fishStr[amt], "{0}: {1}", col2D.Print(), cand);
                         return true;
@@ -321,28 +293,42 @@ namespace SudokuSolver.Core
             return false;
         }
 
-        // Find hidden pairs/triples/quadruples
-        private bool FindHidden(Region region, int amt)
+        bool FindLocked(bool doRows, int rc, int value)
         {
-            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == amt) // If there are only "amt" cells with non-zero candidates, we don't have to waste our time
+            var with = (doRows ? Board.Rows : Board.Columns)[rc].GetPointsWithCandidate(value);
+
+            // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
+            if (with.Count() == 3 || with.Count() == 2)
+            {
+                var blocks = with.Select(p => board[p].Block).Distinct().ToArray();
+                if (blocks.Length == 1)
+                    if (board.BlacklistCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
+                    {
+                        Log("Locked candidate", "{4} {0} locks block {1}, {2}: {3}", rc, blocks[0], with.Print(), value, doRows ? "Row" : "Column");
+                        return true;
+                    }
+            }
+            return false;
+        }
+
+        // Find hidden pairs/triples/quadruples
+        bool FindHidden(Region region, int amt)
+        {
+            if (region.Points.Count(p => board[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
                 return false;
             return DoHidden(region, 0, amt, new int[amt]);
         }
-        private bool DoHidden(Region region, int loop, int amt, int[] cand)
+        bool DoHidden(Region region, int loop, int amt, int[] cand)
         {
             if (loop == amt)
             {
-                var cells = new Point[0];
-                foreach (int v in cand)
+                var points = cand.Select(c => region.GetPointsWithCandidate(c)).UniteAll().ToArray();
+                if (points.Length != amt // There aren't "amt" cells for our tuple to be in
+                    || points.Select(p => board[p].Candidates).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
+                    || cand.Any(v => !points.Any(p => board[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
+                if (board.BlacklistCandidates(points, Enumerable.Range(1, 9).Except(cand)))
                 {
-                    cells = cells.Union(region.GetPointsWithCandidate(v)).ToArray();
-                }
-                if (cells.Length != amt // There aren't "amt" cells for our tuple to be in
-                    || cells.Select(p => candidates[p.X][p.Y].Where(v => v != 0)).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
-                    || cand.Any(v => !cells.Any(p => candidates[p.X][p.Y].Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
-                if (BlacklistCandidates(cells, Enumerable.Range(1, 9).Except(cand)))
-                {
-                    Log("Hidden " + tupleStr[amt], "{0}: {1}", cells.Print(), cand.Print());
+                    Log("Hidden " + tupleStr[amt], "{0}: {1}", points.Print(), cand.Print());
                     return true;
                 }
             }
@@ -358,20 +344,20 @@ namespace SudokuSolver.Core
         }
 
         // Find naked pairs/triples/quadruples
-        private bool FindNaked(Region region, int amt)
+        bool FindNaked(Region region, int amt)
         {
-            if (region.Points.Count(p => candidates[p.X][p.Y].Distinct().Count() > 1) == amt) // If there are only "amt" cells with non-zero candidates, we don't have to waste our time
+            if (region.Points.Count(p => board[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
                 return false;
             return DoNaked(region, 0, amt, new Point[amt], new int[amt]);
         }
-        private bool DoNaked(Region region, int loop, int amt, Point[] points, int[] indexes)
+        bool DoNaked(Region region, int loop, int amt, Point[] points, int[] indexes)
         {
             if (loop == amt)
             {
-                var combo = points.Select(p => candidates[p.X][p.Y]).UniteAll().Where(v => v != 0).ToArray();
+                var combo = points.Select(p => board[p].Candidates).UniteAll().ToArray();
                 if (combo.Length == amt)
                 {
-                    if (BlacklistCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
+                    if (board.BlacklistCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
                     {
                         Log("Naked " + tupleStr[amt], "{0}: {1}", points.Print(), combo.Print());
                         return true;
@@ -383,7 +369,7 @@ namespace SudokuSolver.Core
                 for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
                 {
                     Point p = region.Points[i];
-                    if (candidates[p.X][p.Y].Distinct().Count() == 1) continue; // Only 0s
+                    if (board[p].Candidates.Count == 0) continue;
                     points[loop] = p;
                     indexes[loop] = i;
                     if (DoNaked(region, loop + 1, amt, points, indexes)) return true;
@@ -393,36 +379,16 @@ namespace SudokuSolver.Core
         }
 
         // Clear candidates from a blockrow/blockcolumn and return true if something changed
-        private bool RemoveBlockRowColCandidates(Point[][] blockrcs, bool doRows, int current, int ignoreBlock, int rc, IEnumerable<int> cand)
+        bool RemoveBlockRowColCandidates(Point[][] blockrcs, bool doRows, int current, int ignoreBlock, int rc, IEnumerable<int> cand)
         {
             bool changed = false;
             for (int i = 0; i < 3; i++)
             {
                 if (i == ignoreBlock) continue;
                 var rcs = doRows ? blockrcs[i].GetRow(rc) : blockrcs[i].GetColumn(rc);
-                if (BlacklistCandidates(rcs, cand)) changed = true;
+                if (board.BlacklistCandidates(rcs, cand)) changed = true;
             }
             if (changed) Log("Pointing couple", "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current, ignoreBlock, rc, cand.Print());
-            return changed;
-        }
-
-        // Blacklist the following candidates at the following cells
-        private bool BlacklistCandidates(IEnumerable<Point> points, IEnumerable<int> cand)
-        {
-            bool changed = false;
-            foreach (Point p in points)
-            {
-                foreach (int v in cand)
-                {
-                    if (candidates[p.X][p.Y][v - 1] != 0)
-                    {
-                        changed = true;
-                        candidates[p.X][p.Y][v - 1] = 0;
-                        if (!blacklist.ContainsKey(p)) blacklist.Add(p, new HashSet<int>());
-                        blacklist[p].Add(v);
-                    }
-                }
-            }
             return changed;
         }
     }

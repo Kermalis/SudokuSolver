@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Board.cs" />
+    <Compile Include="Core\Cell.cs" />
     <Compile Include="Core\Extensions.cs" />
     <Compile Include="Core\Region.cs" />
     <Compile Include="Core\Solver.cs" />

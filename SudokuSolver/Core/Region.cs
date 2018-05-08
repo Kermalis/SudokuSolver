@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SudokuSolver.Core
 {
@@ -14,13 +11,12 @@ namespace SudokuSolver.Core
         Block
     }
 
-    class Region
+    public class Region
     {
         public readonly Point[] Points;
-        int[][] _board;
-        int[][][] _candidates;
+        public readonly Cell[] Cells;
 
-        public Region(SudokuRegion region, int index, int[][] board, int[][][] candidates)
+        public Region(Board board, SudokuRegion region, int index)
         {
             switch (region)
             {
@@ -51,13 +47,13 @@ namespace SudokuSolver.Core
                         Points[i] = new Point(index, i);
                     break;
             }
-            _board = board;
-            _candidates = candidates;
+            Cells = Points.Select(p => board[p]).ToArray();
         }
 
-        public int[] GetRegion() => Points.Select(p => _board[p.X][p.Y]).ToArray();
-        public int[][] GetCandidates() => Points.Select(p => _candidates[p.X][p.Y]).ToArray();
+        public int[] GetRegion() => Cells.Select(c => c.Value).ToArray();
+        public HashSet<int>[] GetCandidates() => Cells.Select(c => c.Candidates).ToArray();
 
-        public Point[] GetPointsWithCandidate(int value) => Points.Where(p => _candidates[p.X][p.Y].Contains(value)).ToArray();
+        public Cell[] GetCellsWithCandidate(int value) => Cells.Where(c => c.Candidates.Contains(value)).ToArray();
+        public Point[] GetPointsWithCandidate(int value) => GetCellsWithCandidate(value).Select(c => c.Coordinate).ToArray();
     }
 }
