@@ -38,6 +38,7 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.puzzleLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -123,6 +124,7 @@
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.puzzleLabel,
             this.statusLabel});
             this.statusStrip1.Location = new System.Drawing.Point(0, 552);
             this.statusStrip1.Name = "statusStrip1";
@@ -135,6 +137,12 @@
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(66, 17);
             this.statusLabel.Text = "statusLabel";
+            // 
+            // puzzleLabel
+            // 
+            this.puzzleLabel.Name = "puzzleLabel";
+            this.puzzleLabel.Size = new System.Drawing.Size(68, 17);
+            this.puzzleLabel.Text = "puzzleLabel";
             // 
             // MainWindow
             // 
@@ -173,6 +181,7 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.ListBox logList;
+        private System.Windows.Forms.ToolStripStatusLabel puzzleLabel;
     }
 }
 

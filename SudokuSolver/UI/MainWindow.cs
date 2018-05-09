@@ -16,6 +16,7 @@ namespace SudokuSolver
         {
             InitializeComponent();
             solveButton.Enabled = false;
+            puzzleLabel.Text = "";
             statusLabel.Text = "";
             logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
         }
@@ -79,6 +80,7 @@ namespace SudokuSolver
             if (LoadPuzzle(d.FileName))
             {
                 solveButton.Enabled = true;
+                puzzleLabel.Text = Path.GetFileNameWithoutExtension(d.FileName) + " Puzzle";
                 statusLabel.Text = "";
                 logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
                 logList.DataSource = null;

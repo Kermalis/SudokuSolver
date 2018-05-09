@@ -10,7 +10,10 @@ namespace SudokuSolver.UI
     public class SudokuBoard : UserControl
     {
         IContainer components;
-        int d = 20;
+        readonly int d = 20;
+
+        readonly Brush changedText = Brushes.DodgerBlue, candidateText = Brushes.Crimson,
+            culpritChangedHighlight = Brushes.Plum, culpritHighlight = Brushes.PaleTurquoise, changedHighlight = Brushes.PeachPuff;
 
         Board board;
 
@@ -78,19 +81,23 @@ namespace SudokuSolver.UI
                         Snapshot s = board[x, y].Snapshots[snap];
                         val = s.Value;
                         cand = s.Candidates;
-                        if (s.IsCulprit)
-                        {
-                            int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
-                                exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
-                            e.Graphics.FillRectangle(Brushes.PaleTurquoise, xoff + d + 1 + xxoff, yoff + d + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
-                        }
+                        int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
+                            exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
+                        var rect = new RectangleF(xoff + d + 1 + xxoff, yoff + d + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
+                        bool changed = snap - 1 >= 0 && s.Candidates.Length != board[x, y].Snapshots[snap - 1].Candidates.Length;
+                        if (s.IsCulprit && changed)
+                            e.Graphics.FillRectangle(culpritChangedHighlight, rect);
+                        else if (s.IsCulprit)
+                            e.Graphics.FillRectangle(culpritHighlight, rect);
+                        else if (changed)
+                            e.Graphics.FillRectangle(changedHighlight, rect);
                     }
 
                     if (val != 0)
-                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
+                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : changedText, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
                     else if (candidates)
                         foreach (int v in cand)
-                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
+                            e.Graphics.DrawString(v.ToString(), fMini, candidateText, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
                 }
             }
         }
