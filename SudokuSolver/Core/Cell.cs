@@ -3,13 +3,31 @@ using System.Linq;
 
 namespace SudokuSolver.Core
 {
+    public class Snapshot
+    {
+        public readonly int Value;
+        public readonly int[] Candidates;
+        public readonly bool IsCulprit;
+
+        public Snapshot(int value, HashSet<int> candidates, bool culprit)
+        {
+            Value = value;
+            Candidates = candidates.ToArray();
+            IsCulprit = culprit;
+        }
+    }
+
     public class Cell
     {
         public int Value { get; private set; }
+        public readonly HashSet<int> Candidates;
+
         public readonly int OriginalValue;
         public readonly int Block;
-        public readonly HashSet<int> Candidates;
         public readonly SPoint Point;
+
+        List<Snapshot> _snapshots;
+        public Snapshot[] Snapshots { get => _snapshots.ToArray(); }
 
         Board _board;
 
@@ -20,6 +38,7 @@ namespace SudokuSolver.Core
             Point = point;
             Block = (point.X / 3) + (3 * (point.Y / 3));
             Candidates = new HashSet<int>(Enumerable.Range(1, 9));
+            _snapshots = new List<Snapshot>();
         }
 
         public void Set(int value)
@@ -28,6 +47,7 @@ namespace SudokuSolver.Core
             Candidates.Clear();
             _board.BlacklistCandidates(GetCanSeePoints(), new int[] { value });
         }
+        public void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
 
         public override int GetHashCode() => Point.GetHashCode();
         public override bool Equals(object obj)

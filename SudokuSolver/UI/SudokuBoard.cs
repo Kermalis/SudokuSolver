@@ -1,5 +1,6 @@
 ﻿using SudokuSolver.Core;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -9,9 +10,12 @@ namespace SudokuSolver.UI
     public class SudokuBoard : UserControl
     {
         IContainer components;
-        Board board;
-        bool candidates = false;
         int d = 20;
+
+        Board board;
+
+        bool candidates = false;
+        int snap = -1;
 
         protected override void Dispose(bool disposing)
         {
@@ -60,25 +64,42 @@ namespace SudokuSolver.UI
             {
                 float xoff = w * x;
                 e.Graphics.DrawString((x + 1).ToString(), fMini, Brushes.Black, xoff + w / 1.3f, 0);
-                e.Graphics.DrawString(((char)(x + 65)).ToString(), fMini, Brushes.Black, 0, h * x + h / 1.4f);
+                e.Graphics.DrawString(SPoint.RowL(x), fMini, Brushes.Black, 0, h * x + h / 1.4f);
                 for (int y = 0; y < 9; y++)
                 {
                     float yoff = h * y;
                     e.Graphics.DrawRectangle(Pens.Black, xoff + d, yoff + d, w, h);
                     if (board == null) continue;
-                    if (board[x, y] != 0)
-                        e.Graphics.DrawString(board[x, y].Value.ToString(), f, board[x, y].Value == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
+
+                    int val = board[x, y];
+                    IEnumerable<int> cand = board[x, y].Candidates;
+
+                    if (snap >= 0 && snap < board[x, y].Snapshots.Length) {
+                        Snapshot s = board[x, y].Snapshots[snap];
+                        val = s.Value;
+                        cand = s.Candidates;
+                        if (s.IsCulprit)
+                        {
+                            int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
+                                exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
+                            e.Graphics.FillRectangle(Brushes.PaleTurquoise, xoff + d + 1 + xxoff, yoff + d + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
+                        }
+                    }
+
+                    if (val != 0)
+                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
                     else if (candidates)
-                        foreach (int v in board[x, y].Candidates)
+                        foreach (int v in cand)
                             e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
                 }
             }
         }
 
         void SudokuBoard_Resize(object sender, EventArgs e) => ReDraw(candidates);
-        public void ReDraw(bool showCandidates)
+        public void ReDraw(bool showCandidates, int snapshot = -1)
         {
             candidates = showCandidates;
+            snap = snapshot;
             Invalidate();
         }
 

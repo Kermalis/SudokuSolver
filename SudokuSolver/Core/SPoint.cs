@@ -17,6 +17,7 @@
             return false;
         }
         public override int GetHashCode() => X.GetHashCode() + Y.GetHashCode();
-        public override string ToString() => ((char)(Y + 65)).ToString() + (X + 1).ToString();
+        public static string RowL(int r) => ((char)(r + 65)).ToString();
+        public override string ToString() => RowL(Y) + (X + 1).ToString();
     }
 }

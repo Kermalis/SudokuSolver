@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace SudokuSolver
@@ -18,7 +17,10 @@ namespace SudokuSolver
             InitializeComponent();
             solveButton.Enabled = false;
             statusLabel.Text = "";
+            logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
         }
+
+        private void LogList_SelectedIndexChanged(object sender, EventArgs e) => sudokuBoard.ReDraw(true, logList.SelectedIndex);
 
         private void SolveButton_Click(object sender, EventArgs e)
         {
@@ -34,8 +36,10 @@ namespace SudokuSolver
         private void Solver_Finished(object sender, RunWorkerCompletedEventArgs e)
         {
             stopwatch.Stop();
-            sudokuBoard.ReDraw(true);
-            logTextBox.Text = (string)e.Result;
+            var log = (string[])e.Result;
+            logList.DataSource = log;
+            logList.SelectedIndex = log.Length - 1;
+            logList.Select();
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
         }
 
@@ -75,7 +79,10 @@ namespace SudokuSolver
             if (LoadPuzzle(d.FileName))
             {
                 solveButton.Enabled = true;
-                logTextBox.Text = "";
+                statusLabel.Text = "";
+                logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
+                logList.DataSource = null;
+                logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
             }
             else
             {

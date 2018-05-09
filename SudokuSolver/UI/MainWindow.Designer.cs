@@ -31,7 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.sudokuBoard = new SudokuSolver.UI.SudokuBoard();
-            this.logTextBox = new System.Windows.Forms.TextBox();
+            this.logList = new System.Windows.Forms.ListBox();
             this.solveButton = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -58,7 +58,7 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.logTextBox);
+            this.splitContainer1.Panel2.Controls.Add(this.logList);
             this.splitContainer1.Size = new System.Drawing.Size(941, 470);
             this.splitContainer1.SplitterDistance = 470;
             this.splitContainer1.SplitterWidth = 1;
@@ -74,17 +74,16 @@
             this.sudokuBoard.Size = new System.Drawing.Size(470, 470);
             this.sudokuBoard.TabIndex = 0;
             // 
-            // logTextBox
+            // logList
             // 
-            this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logTextBox.Font = new System.Drawing.Font("Meiryo", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.logTextBox.Location = new System.Drawing.Point(0, 0);
-            this.logTextBox.Multiline = true;
-            this.logTextBox.Name = "logTextBox";
-            this.logTextBox.ReadOnly = true;
-            this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logTextBox.Size = new System.Drawing.Size(470, 470);
-            this.logTextBox.TabIndex = 0;
+            this.logList.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.logList.Font = new System.Drawing.Font("Meiryo", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.logList.FormattingEnabled = true;
+            this.logList.ItemHeight = 17;
+            this.logList.Location = new System.Drawing.Point(0, 7);
+            this.logList.Name = "logList";
+            this.logList.Size = new System.Drawing.Size(470, 463);
+            this.logList.TabIndex = 0;
             // 
             // solveButton
             // 
@@ -152,7 +151,6 @@
             this.Text = "Sudoku Solver";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
@@ -174,7 +172,7 @@
         private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
-        private System.Windows.Forms.TextBox logTextBox;
+        private System.Windows.Forms.ListBox logList;
     }
 }
 

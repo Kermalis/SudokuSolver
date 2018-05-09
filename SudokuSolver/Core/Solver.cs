@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
@@ -9,26 +8,20 @@ namespace SudokuSolver.Core
     {
         Board board;
 
-        string log = "";
-
         string[] fishStr = new string[] { "", "", "X-Wing", "Swordfish", "Jellyfish" };
         string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
 
         public Solver(int[][] inBoard, UI.SudokuBoard control) => control.SetBoard(board = new Board(inBoard));
 
-        void Log(string technique, string format, params object[] args) => Log($"{technique,-20}" + format, args);
-        void Log(string format, params object[] args) => Log(string.Format(format, args));
-        void Log(string s) => log += s + Environment.NewLine;
-
         public void DoWork(object sender, DoWorkEventArgs e)
         {
+            board.Log("Begin");
             bool changed, done;
+
             do
             {
                 changed = false; // If this is true at the end of the loop, loop again
                 done = true; // If this is true after a segment, the puzzle is solved and we can break
-
-                Log("Loop");
 
                 // Check for naked singles or a completed puzzle
                 for (int x = 0; x < 9; x++)
@@ -44,12 +37,12 @@ namespace SudokuSolver.Core
                         if (a.Length == 1)
                         {
                             board[p].Set(a[0]);
-                            Log("Naked single", "{0}: {1}", p, a[0]);
+                            board.Log("Naked single", new SPoint[] { p }, "{0}: {1}", p, a[0]);
                             changed = true;
                         }
                     }
                 }
-                if (done) { Log("Solver completed the puzzle."); break; }
+                if (done) break;
                 if (changed) continue;
 
                 // Check for hidden singles
@@ -63,7 +56,7 @@ namespace SudokuSolver.Core
                             if (p.Length == 1)
                             {
                                 board[p[0]].Set(v);
-                                Log("Hidden single", "{0}: {1}", p[0], v);
+                                board.Log("Hidden single", p, "{0}: {1}", p[0], v);
                                 changed = true;
                             }
                         }
@@ -202,7 +195,8 @@ namespace SudokuSolver.Core
 
             } while (changed);
 
-            e.Result = log;
+            board.Log(done ? "Solver completed the puzzle" : "Solver failed");
+            e.Result = board.GetLog;
         }
 
         bool FindXYZWing(Region region)
@@ -231,7 +225,8 @@ namespace SudokuSolver.Core
                             if (board.BlacklistCandidates(allSee, allHave))
                             {
                                 changed = true;
-                                Log("XYZ-Wing", "{0} see {1}: {2}", new SPoint[] { p2, p3, p2_2 }.Print(), allSee.Print(), allHave[0]);
+                                var culprits = new SPoint[] { p2, p3, p2_2 };
+                                board.Log("XYZ-Wing", culprits, "{0} see {1}: {2}", culprits.Print(), allSee.Print(), allHave[0]);
                             }
                         }
                     }
@@ -270,7 +265,8 @@ namespace SudokuSolver.Core
                                 var cand = board[pOther].Candidates.Intersect(board[p3].Candidates).ToArray(); // Will just be 1 candidate
                                 if (board.BlacklistCandidates(common, cand))
                                 {
-                                    Log("Y-Wing", "{0}: {1}", new SPoint[] { p1, p2, p3 }.Print(), cand[0]);
+                                    var culprits = new SPoint[] { p1, p2, p3 };
+                                    board.Log("Y-Wing", culprits, "{0}: {1}", culprits.Print(), cand[0]);
                                     return true;
                                 }
                             }
@@ -305,7 +301,7 @@ namespace SudokuSolver.Core
                     var row2D = rowPoints.UniteAll();
                     if (board.BlacklistCandidates(row2D.Select(p => Board.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
                     {
-                        Log(fishStr[amt], "{0}: {1}", row2D.Print(), cand);
+                        board.Log(fishStr[amt], row2D, "{0}: {1}", row2D.Print(), cand);
                         return true;
                     }
                 }
@@ -314,7 +310,7 @@ namespace SudokuSolver.Core
                     var col2D = colPoints.UniteAll();
                     if (board.BlacklistCandidates(col2D.Select(p => Board.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
                     {
-                        Log(fishStr[amt], "{0}: {1}", col2D.Print(), cand);
+                        board.Log(fishStr[amt], col2D, "{0}: {1}", col2D.Print(), cand);
                         return true;
                     }
                 }
@@ -341,7 +337,7 @@ namespace SudokuSolver.Core
                 if (blocks.Length == 1)
                     if (board.BlacklistCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
                     {
-                        Log("Locked candidate", "{4} {0} locks block {1}, {2}: {3}", rc + 1, blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
+                        board.Log("Locked candidate", with, "{4} {0} locks in block {1}, {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
                         return true;
                     }
             }
@@ -365,7 +361,7 @@ namespace SudokuSolver.Core
                     || cand.Any(v => !points.Any(p => board[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
                 if (board.BlacklistCandidates(points, Enumerable.Range(1, 9).Except(cand)))
                 {
-                    Log("Hidden " + tupleStr[amt], "{0}: {1}", points.Print(), cand.Print());
+                    board.Log("Hidden " + tupleStr[amt], points, "{0}: {1}", points.Print(), cand.Print());
                     return true;
                 }
             }
@@ -396,7 +392,7 @@ namespace SudokuSolver.Core
                 {
                     if (board.BlacklistCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
                     {
-                        Log("Naked " + tupleStr[amt], "{0}: {1}", points.Print(), combo.Print());
+                        board.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
                         return true;
                     }
                 }
@@ -425,7 +421,8 @@ namespace SudokuSolver.Core
                 var rcs = doRows ? blockrcs[i].GetRow(rc) : blockrcs[i].GetColumn(rc);
                 if (board.BlacklistCandidates(rcs, cand)) changed = true;
             }
-            if (changed) Log("Pointing couple", "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, rc + 1, cand.Print());
+            if (changed) board.Log("Pointing couple", doRows ? blockrcs[ignoreBlock].GetRow(rc) : blockrcs[ignoreBlock].GetColumn(rc),
+                "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, rc + 1, cand.Print());
             return changed;
         }
     }
