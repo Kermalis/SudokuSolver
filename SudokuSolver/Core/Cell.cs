@@ -36,7 +36,15 @@ namespace SudokuSolver.Core
                 return other.Value == Value && other.Point.Equals(Point);
             return false;
         }
-        public override string ToString() => Value.ToString();
+        public override string ToString()
+        {
+            string s = Point.ToString() + " ";
+            if (Value == 0)
+                s += "has candidates: " + Candidates.Print();
+            else
+                s += "is " + Value.ToString();
+            return s;
+        }
 
         public static implicit operator int(Cell c) => c.Value;
 
