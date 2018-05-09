@@ -70,7 +70,7 @@ namespace SudokuSolver.UI
                         e.Graphics.DrawString(board[x, y].Value.ToString(), f, board[x, y].Value == board[x, y].OriginalValue ? Brushes.Black : Brushes.DeepSkyBlue, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
                     else if (candidates)
                         foreach (int v in board[x, y].Candidates)
-                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, xoff + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
+                            e.Graphics.DrawString(v.ToString(), fMini, Brushes.Crimson, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
                 }
             }
         }
