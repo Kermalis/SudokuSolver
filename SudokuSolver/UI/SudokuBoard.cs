@@ -60,7 +60,7 @@ namespace SudokuSolver.UI
             {
                 float xoff = w * x;
                 e.Graphics.DrawString((x + 1).ToString(), fMini, Brushes.Black, xoff + w / 1.3f, 0);
-                e.Graphics.DrawString(((char)(x + 65)).ToString(), fMini, Brushes.Black, 0, xoff + w / 1.4f);
+                e.Graphics.DrawString(((char)(x + 65)).ToString(), fMini, Brushes.Black, 0, h * x + h / 1.4f);
                 for (int y = 0; y < 9; y++)
                 {
                     float yoff = h * y;
