@@ -19,4 +19,3 @@ Big thanks to http://www.sudokuwiki.org for providing a lot of information on to
 
 1. Maybe lower the framework version
 2. A way to toggle techniques and logging with the UI
-3. Find a hidden triple puzzle that this program actually uses the hidden triple technique on

@@ -337,7 +337,7 @@ namespace SudokuSolver.Core
                 if (blocks.Length == 1)
                     if (board.BlacklistCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
                     {
-                        board.Log("Locked candidate", with, "{4} {0} locks in block {1}, {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
+                        board.Log("Locked candidate", with, "{4} {0} locks within block {1}: {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
                         return true;
                     }
             }
@@ -422,7 +422,7 @@ namespace SudokuSolver.Core
                 if (board.BlacklistCandidates(rcs, cand)) changed = true;
             }
             if (changed) board.Log("Pointing couple", doRows ? blockrcs[ignoreBlock].GetRow(rc) : blockrcs[ignoreBlock].GetColumn(rc),
-                "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, rc + 1, cand.Print());
+                "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), cand.Print());
             return changed;
         }
     }
