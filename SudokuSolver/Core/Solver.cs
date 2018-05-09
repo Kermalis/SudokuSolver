@@ -11,10 +11,11 @@ namespace SudokuSolver.Core
         string[] fishStr = new string[] { "", "", "X-Wing", "Swordfish", "Jellyfish" };
         string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
 
-        public Solver(int[][] inBoard, UI.SudokuBoard control) => control.SetBoard(board = new Board(inBoard));
+        public Solver(int[][] inBoard, bool bCustom, out Board outBoard) => outBoard = (this.board = new Board(inBoard, bCustom));
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
+            board.RefreshCandidates();
             board.Log("Begin");
             bool changed, done;
 
@@ -196,7 +197,7 @@ namespace SudokuSolver.Core
             } while (changed);
 
             board.Log(done ? "Solver completed the puzzle" : "Solver failed");
-            e.Result = board.GetLog;
+            e.Result = board;
         }
 
         bool FindXYZWing(Region region)
@@ -222,7 +223,7 @@ namespace SudokuSolver.Core
                         {
                             var allSee = board[p2].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints()).Intersect(board[p2_2].GetCanSeePoints());
                             var allHave = board[p2].Candidates.Intersect(board[p3].Candidates).Intersect(board[p2_2].Candidates).ToArray(); // Will be 1 Length
-                            if (board.BlacklistCandidates(allSee, allHave))
+                            if (board.ChangeCandidates(allSee, allHave))
                             {
                                 changed = true;
                                 var culprits = new SPoint[] { p2, p3, p2_2 };
@@ -263,7 +264,7 @@ namespace SudokuSolver.Core
                                 SPoint pOther = b.Single(p => p != point);
                                 var common = board[pOther].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints());
                                 var cand = board[pOther].Candidates.Intersect(board[p3].Candidates).ToArray(); // Will just be 1 candidate
-                                if (board.BlacklistCandidates(common, cand))
+                                if (board.ChangeCandidates(common, cand))
                                 {
                                     var culprits = new SPoint[] { p1, p2, p3 };
                                     board.Log("Y-Wing", culprits, "{0}: {1}", culprits.Print(), cand[0]);
@@ -299,7 +300,7 @@ namespace SudokuSolver.Core
                 if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
-                    if (board.BlacklistCandidates(row2D.Select(p => Board.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
+                    if (board.ChangeCandidates(row2D.Select(p => Board.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
                     {
                         board.Log(fishStr[amt], row2D, "{0}: {1}", row2D.Print(), cand);
                         return true;
@@ -308,7 +309,7 @@ namespace SudokuSolver.Core
                 if (colLengths.Max() == amt && colLengths.Min() > 0 && colPoints.Select(parr => parr.Select(p => p.Y)).UniteAll().Count() <= amt)
                 {
                     var col2D = colPoints.UniteAll();
-                    if (board.BlacklistCandidates(col2D.Select(p => Board.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
+                    if (board.ChangeCandidates(col2D.Select(p => Board.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
                     {
                         board.Log(fishStr[amt], col2D, "{0}: {1}", col2D.Print(), cand);
                         return true;
@@ -335,7 +336,7 @@ namespace SudokuSolver.Core
             {
                 var blocks = with.Select(p => board[p].Block).Distinct().ToArray();
                 if (blocks.Length == 1)
-                    if (board.BlacklistCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
+                    if (board.ChangeCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
                     {
                         board.Log("Locked candidate", with, "{4} {0} locks within block {1}: {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
                         return true;
@@ -359,7 +360,7 @@ namespace SudokuSolver.Core
                 if (points.Length != amt // There aren't "amt" cells for our tuple to be in
                     || points.Select(p => board[p].Candidates).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
                     || cand.Any(v => !points.Any(p => board[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
-                if (board.BlacklistCandidates(points, Enumerable.Range(1, 9).Except(cand)))
+                if (board.ChangeCandidates(points, Enumerable.Range(1, 9).Except(cand)))
                 {
                     board.Log("Hidden " + tupleStr[amt], points, "{0}: {1}", points.Print(), cand.Print());
                     return true;
@@ -390,7 +391,7 @@ namespace SudokuSolver.Core
                 var combo = points.Select(p => board[p].Candidates).UniteAll().ToArray();
                 if (combo.Length == amt)
                 {
-                    if (board.BlacklistCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
+                    if (board.ChangeCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
                     {
                         board.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
                         return true;
@@ -419,7 +420,7 @@ namespace SudokuSolver.Core
             {
                 if (i == ignoreBlock) continue;
                 var rcs = doRows ? blockrcs[i].GetRow(rc) : blockrcs[i].GetColumn(rc);
-                if (board.BlacklistCandidates(rcs, cand)) changed = true;
+                if (board.ChangeCandidates(rcs, cand)) changed = true;
             }
             if (changed) board.Log("Pointing couple", doRows ? blockrcs[ignoreBlock].GetRow(rc) : blockrcs[ignoreBlock].GetColumn(rc),
                 "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), cand.Print());

@@ -30,15 +30,16 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.sudokuBoard = new SudokuSolver.UI.SudokuBoard();
             this.logList = new System.Windows.Forms.ListBox();
             this.solveButton = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.puzzleLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.sudokuBoard = new SudokuSolver.UI.SudokuBoard();
+            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -64,16 +65,6 @@
             this.splitContainer1.SplitterDistance = 470;
             this.splitContainer1.SplitterWidth = 1;
             this.splitContainer1.TabIndex = 2;
-            // 
-            // sudokuBoard
-            // 
-            this.sudokuBoard.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.sudokuBoard.Font = new System.Drawing.Font("Leelawadee", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sudokuBoard.Location = new System.Drawing.Point(0, 0);
-            this.sudokuBoard.Margin = new System.Windows.Forms.Padding(0);
-            this.sudokuBoard.Name = "sudokuBoard";
-            this.sudokuBoard.Size = new System.Drawing.Size(470, 470);
-            this.sudokuBoard.TabIndex = 0;
             // 
             // logList
             // 
@@ -109,6 +100,7 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.newToolStripMenuItem,
             this.openToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -117,7 +109,7 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.openToolStripMenuItem.Text = "Open";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.OpenPuzzle);
             // 
@@ -132,17 +124,35 @@
             this.statusStrip1.TabIndex = 0;
             this.statusStrip1.Text = "statusStrip1";
             // 
+            // puzzleLabel
+            // 
+            this.puzzleLabel.Name = "puzzleLabel";
+            this.puzzleLabel.Size = new System.Drawing.Size(68, 17);
+            this.puzzleLabel.Text = "puzzleLabel";
+            // 
             // statusLabel
             // 
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(66, 17);
             this.statusLabel.Text = "statusLabel";
             // 
-            // puzzleLabel
+            // sudokuBoard
             // 
-            this.puzzleLabel.Name = "puzzleLabel";
-            this.puzzleLabel.Size = new System.Drawing.Size(68, 17);
-            this.puzzleLabel.Text = "puzzleLabel";
+            this.sudokuBoard.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.sudokuBoard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sudokuBoard.Font = new System.Drawing.Font("Leelawadee", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.sudokuBoard.Location = new System.Drawing.Point(0, 0);
+            this.sudokuBoard.Margin = new System.Windows.Forms.Padding(0);
+            this.sudokuBoard.Name = "sudokuBoard";
+            this.sudokuBoard.Size = new System.Drawing.Size(470, 470);
+            this.sudokuBoard.TabIndex = 0;
+            // 
+            // newToolStripMenuItem
+            // 
+            this.newToolStripMenuItem.Name = "newToolStripMenuItem";
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.newToolStripMenuItem.Text = "New";
+            this.newToolStripMenuItem.Click += new System.EventHandler(this.NewPuzzle);
             // 
             // MainWindow
             // 
@@ -182,6 +192,7 @@
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.ListBox logList;
         private System.Windows.Forms.ToolStripStatusLabel puzzleLabel;
+        private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
     }
 }
 

@@ -19,13 +19,16 @@ namespace SudokuSolver
             puzzleLabel.Text = "";
             statusLabel.Text = "";
             logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
+            sudokuBoard.CellChanged += (cell) => ChangeSolveButtonState(true);
         }
 
         private void LogList_SelectedIndexChanged(object sender, EventArgs e) => sudokuBoard.ReDraw(true, logList.SelectedIndex);
 
+        private void ChangeSolveButtonState(bool state) => solveButton.Enabled = state;
+
         private void SolveButton_Click(object sender, EventArgs e)
         {
-            solveButton.Enabled = false;
+            ChangeSolveButtonState(false);
             stopwatch = new Stopwatch();
             var bw = new BackgroundWorker();
             bw.DoWork += solver.DoWork;
@@ -37,9 +40,10 @@ namespace SudokuSolver
         private void Solver_Finished(object sender, RunWorkerCompletedEventArgs e)
         {
             stopwatch.Stop();
-            var log = (string[])e.Result;
-            logList.DataSource = log;
-            logList.SelectedIndex = log.Length - 1;
+            var board = (Board)e.Result;
+            logList.DataSource = null; // If a new puzzle is used it glitches out for some reason unless I put this
+            logList.DataSource = board.Actions;
+            logList.SelectedIndex = board.Actions.Count - 1;
             logList.Select();
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
         }
@@ -63,8 +67,19 @@ namespace SudokuSolver
                 }
             }
 
-            solver = new Solver(board, sudokuBoard);
+            solver = new Solver(board, false, out Board b);
+            sudokuBoard.SetBoard(b);
             return true;
+        }
+
+        private void ChangePuzzle(string name, bool buttonState)
+        {
+            ChangeSolveButtonState(buttonState);
+            puzzleLabel.Text = name + " Puzzle";
+            statusLabel.Text = "";
+            logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
+            logList.DataSource = null;
+            logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
         }
 
         private void OpenPuzzle(object sender, EventArgs e)
@@ -78,18 +93,19 @@ namespace SudokuSolver
             if (d.ShowDialog() != DialogResult.OK) return;
 
             if (LoadPuzzle(d.FileName))
-            {
-                solveButton.Enabled = true;
-                puzzleLabel.Text = Path.GetFileNameWithoutExtension(d.FileName) + " Puzzle";
-                statusLabel.Text = "";
-                logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
-                logList.DataSource = null;
-                logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
-            }
+                ChangePuzzle(Path.GetFileNameWithoutExtension(d.FileName), true);
             else
-            {
                 MessageBox.Show("Invalid puzzle data.");
-            }
+        }
+
+        private void NewPuzzle(object sender, EventArgs e)
+        {
+            ChangePuzzle("Custom", false);
+            solver = new Solver(Utils.CreateJaggedArray<int[][]>(9, 9), true, out Board board);
+            sudokuBoard.SetBoard(board);
+            logList.DataSource = board.Actions;
+            board.Log("Custom puzzle created");
+            MessageBox.Show("A custom puzzle has been created. Click cells to type in values.", "Custom Puzzle");
         }
     }
 }

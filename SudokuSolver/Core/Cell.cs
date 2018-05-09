@@ -20,9 +20,9 @@ namespace SudokuSolver.Core
     public class Cell
     {
         public int Value { get; private set; }
-        public readonly HashSet<int> Candidates;
+        public HashSet<int> Candidates { get; private set; }
 
-        public readonly int OriginalValue;
+        public int OriginalValue { get; private set; }
         public readonly int Block;
         public readonly SPoint Point;
 
@@ -41,12 +41,22 @@ namespace SudokuSolver.Core
             _snapshots = new List<Snapshot>();
         }
 
-        public void Set(int value)
+        public void Set(int newVal)
         {
-            Value = value;
-            Candidates.Clear();
-            _board.BlacklistCandidates(GetCanSeePoints(), new int[] { value });
+            if (newVal == 0)
+            {
+                Candidates = new HashSet<int>(Enumerable.Range(1, 9));
+                _board.ChangeCandidates(GetCanSeePoints(), new int[] { Value }, false);
+                _board.RefreshCandidates();
+            }
+            else
+            {
+                Candidates.Clear();
+                _board.ChangeCandidates(GetCanSeePoints(), new int[] { newVal });
+            }
+            Value = newVal;
         }
+        public void ChangeOriginal(int value) => Set(OriginalValue = value);
         public void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
 
         public override int GetHashCode() => Point.GetHashCode();
@@ -62,7 +72,7 @@ namespace SudokuSolver.Core
             if (Value == 0)
                 s += "has candidates: " + Candidates.Print();
             else
-                s += "is " + Value.ToString();
+                s += "- " + Value.ToString();
             return s;
         }
 

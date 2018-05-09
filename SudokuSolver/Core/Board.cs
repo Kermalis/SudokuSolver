@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace SudokuSolver.Core
@@ -10,14 +11,16 @@ namespace SudokuSolver.Core
         public static Region[] Blocks { get; private set; }
         public static Region[][] Regions { get; private set; }
 
-        Cell[][] _board;
-        List<string> _log;
-        public string[] GetLog { get => _log.ToArray(); }
+        public readonly bool IsCustom;
 
-        public Board(int[][] inBoard)
+        Cell[][] _board;
+        public readonly BindingList<string> Actions;
+
+        public Board(int[][] inBoard, bool bCustom)
         {
             _board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
-            _log = new List<string>();
+            IsCustom = bCustom;
+            Actions = new BindingList<string>();
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
                     _board[x][y] = new Cell(this, inBoard[x][y], new SPoint(x, y));
@@ -28,9 +31,6 @@ namespace SudokuSolver.Core
                 Columns[i] = new Region(this, SudokuRegion.Column, i);
                 Blocks[i] = new Region(this, SudokuRegion.Block, i);
             }
-            for (int x = 0; x < 9; x++)
-                for (int y = 0; y < 9; y++)
-                    if (_board[x][y] != 0) _board[x][y].Set(_board[x][y]); // Update candidates
         }
 
         public Cell this[int x, int y]
@@ -49,17 +49,23 @@ namespace SudokuSolver.Core
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
                     this[x, y].TakeSnapshot(culprits != null && culprits.Contains(this[x, y]));
-            _log.Add(s);
+            Actions.Add(s);
         }
 
-        // Blacklist the following candidates at the following cells
-        public bool BlacklistCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand)
+        // Add/Remove the following candidates at the following locations
+        public bool ChangeCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand, bool remove = true)
         {
             bool changed = false;
             foreach (SPoint p in points)
                 foreach (int v in cand)
-                    if (this[p].Candidates.Remove(v)) changed = true;
+                    if (remove ? this[p].Candidates.Remove(v) : this[p].Candidates.Add(v)) changed = true;
             return changed;
+        }
+        public void RefreshCandidates()
+        {
+            for (int x = 0; x < 9; x++)
+                for (int y = 0; y < 9; y++)
+                    if (this[x, y] != 0) this[x, y].Set(this[x, y]);
         }
     }
 }

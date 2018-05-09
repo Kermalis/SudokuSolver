@@ -9,15 +9,18 @@ namespace SudokuSolver.UI
 {
     public class SudokuBoard : UserControl
     {
-        IContainer components;
+        IContainer components = null;
         readonly int d = 20;
-
         readonly Brush changedText = Brushes.DodgerBlue, candidateText = Brushes.Crimson,
             culpritChangedHighlight = Brushes.Plum, culpritHighlight = Brushes.PaleTurquoise, changedHighlight = Brushes.PeachPuff;
 
+        public delegate void CellChangedEventHandler(Cell cell);
+        public event CellChangedEventHandler CellChanged;
+        SPoint selected = null;
+
         Board board;
 
-        bool candidates = false;
+        bool bCandidates = false;
         int snap = -1;
 
         protected override void Dispose(bool disposing)
@@ -28,19 +31,21 @@ namespace SudokuSolver.UI
             }
             base.Dispose(disposing);
         }
-
         void InitializeComponent()
         {
-            base.SuspendLayout();
-            base.AutoScaleMode = AutoScaleMode.Font;
-            this.DoubleBuffered = true;
-            base.Name = "SudokuBoard";
-            base.Size = new Size(450 + d, 450 + d);
-            base.Paint += new PaintEventHandler(SudokuBoard_Paint);
-            base.Resize += new EventHandler(SudokuBoard_Resize);
-            base.ResumeLayout(false);
+            SuspendLayout();
+            AutoScaleMode = AutoScaleMode.Font;
+            DoubleBuffered = true;
+            Name = "SudokuBoard";
+            Size = new Size(450 + d, 450 + d);
+            Paint += SudokuBoard_Paint;
+            MouseMove += SudokuBoard_MouseMove;
+            MouseClick += SudokuBoard_Click;
+            KeyPress += SudokuBoard_KeyPress;
+            LostFocus += (sender, e) => SudokuBoard_KeyPress(sender, null);
+            Resize += SudokuBoard_Resize;
+            ResumeLayout(false);
         }
-
         public SudokuBoard() => InitializeComponent();
 
         void SudokuBoard_Paint(object sender, PaintEventArgs e)
@@ -77,7 +82,8 @@ namespace SudokuSolver.UI
                     int val = board[x, y];
                     IEnumerable<int> cand = board[x, y].Candidates;
 
-                    if (snap >= 0 && snap < board[x, y].Snapshots.Length) {
+                    if (snap >= 0 && snap < board[x, y].Snapshots.Length)
+                    {
                         Snapshot s = board[x, y].Snapshots[snap];
                         val = s.Value;
                         cand = s.Candidates;
@@ -93,19 +99,44 @@ namespace SudokuSolver.UI
                             e.Graphics.FillRectangle(changedHighlight, rect);
                     }
 
+                    var point = new PointF(xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
+                    if (selected != null && selected.X == x && selected.Y == y)
+                        e.Graphics.DrawString("_", f, Brushes.Crimson, point);
                     if (val != 0)
-                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : changedText, xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
-                    else if (candidates)
+                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : changedText, point);
+                    else if (bCandidates)
                         foreach (int v in cand)
                             e.Graphics.DrawString(v.ToString(), fMini, candidateText, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
                 }
             }
         }
 
-        void SudokuBoard_Resize(object sender, EventArgs e) => ReDraw(candidates);
+        private SPoint GetCellFromPosition(Point location) => (board == null || !board.IsCustom || location.X < d || location.Y < d) ? null : new SPoint((location.X - d) / ((Width - d) / 9), (location.Y - d) / ((Height - d) / 9));
+
+        private void SudokuBoard_MouseMove(object sender, MouseEventArgs e) => Cursor = GetCellFromPosition(e.Location) == null ? Cursors.Default : Cursors.Hand;
+        private void SudokuBoard_Click(object sender, MouseEventArgs e)
+        {
+            selected = GetCellFromPosition(e.Location);
+            ReDraw(false);
+        }
+        private void SudokuBoard_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (selected == null) return;
+
+            if (e != null && ((e.KeyChar == 48 && board[selected] != 0) || (e.KeyChar > 48 && e.KeyChar <= 57)))
+            {
+                board[selected].ChangeOriginal(e.KeyChar - 48);
+                board.Log("Changed cell", new Cell[] { board[selected] }, board[selected].ToString());
+                CellChanged?.Invoke(board[selected]);
+            }
+            selected = null;
+            ReDraw(false);
+        }
+
+        void SudokuBoard_Resize(object sender, EventArgs e) => ReDraw(bCandidates);
         public void ReDraw(bool showCandidates, int snapshot = -1)
         {
-            candidates = showCandidates;
+            bCandidates = showCandidates;
             snap = snapshot;
             Invalidate();
         }

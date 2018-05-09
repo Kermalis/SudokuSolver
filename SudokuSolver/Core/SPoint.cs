@@ -10,6 +10,8 @@
             Y = y;
         }
 
+        public static implicit operator SPoint(System.Drawing.Point p) => new SPoint(p.X, p.Y);
+
         public override bool Equals(object obj)
         {
             if (obj is SPoint other)
