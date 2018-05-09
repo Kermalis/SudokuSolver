@@ -44,7 +44,7 @@ namespace SudokuSolver.UI
             e.Graphics.DrawRectangle(Pens.Black, d, d, rWidth - 1, rHeight - 1);
 
             float w = (rWidth / 3f), h = (rHeight / 3f);
-            bool b = false;
+            bool b = true;
             for (int x = 0; x < 3; x++)
             {
                 for (int y = 0; y < 3; y++)
