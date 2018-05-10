@@ -90,7 +90,7 @@ namespace SudokuSolver.UI
                         int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
                             exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
                         var rect = new RectangleF(xoff + d + 1 + xxoff, yoff + d + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
-                        bool changed = snap - 1 >= 0 && s.Candidates.Length != board[x, y].Snapshots[snap - 1].Candidates.Length;
+                        bool changed = snap - 1 >= 0 && !new HashSet<int>(s.Candidates).SetEquals(board[x, y].Snapshots[snap - 1].Candidates);
                         if (s.IsCulprit && changed)
                             e.Graphics.FillRectangle(culpritChangedHighlight, rect);
                         else if (s.IsCulprit)

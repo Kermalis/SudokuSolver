@@ -65,7 +65,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue; // Do another pass with simple logic before moving onto more intensive logic
 
-                // Check for naked pairs
+                // Check for naked/locked pairs - http://hodoku.sourceforge.net/en/tech_naked.php#n2
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindNaked(Puzzle.Blocks[i], 2)
@@ -74,7 +74,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for hidden pairs
+                // Check for hidden pairs - http://hodoku.sourceforge.net/en/tech_hidden.php#h2
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindHidden(Puzzle.Blocks[i], 2)
@@ -83,7 +83,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for locked row/column candidates
+                // Check for locked row/column candidates - http://hodoku.sourceforge.net/en/tech_intersections.php#lc1
                 for (int i = 0; i < 9; i++)
                 {
                     for (int v = 1; v <= 9; v++)
@@ -93,27 +93,21 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for Y-Wings
+                // Check for Y-Wings - http://www.sudokuwiki.org/Y_Wing_Strategy
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindYWing(Puzzle.Rows[i]) || FindYWing(Puzzle.Columns[i])) { changed = true; break; }
                 }
                 if (changed) continue;
 
-                // Check for XYZ-Wings
+                // Check for XYZ-Wings - http://www.sudokuwiki.org/XYZ_Wing
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindXYZWing(Puzzle.Rows[i]) || FindXYZWing(Puzzle.Columns[i])) { changed = true; break; }
                 }
                 if (changed) continue;
 
-                // Check for pointing pairs/triples
-                // For example: 
-                // 9 3 6     0 5 0     7 0 4
-                // 2 7 8     1 9 4     5 3 6
-                // 0 0 5     0 7 0     9 0 0
-                // The block on the left can only have 1s in the bottom row, so remove the possibility of 1s in the block on the right's bottom row
-                // A 1 will then be placed in the top spot of that block on the next loop, because it is the only available spot for a 1
+                // Check for pointing pairs/triples - http://hodoku.sourceforge.net/en/tech_intersections.php#lc1
                 // I did not make this a dedicated function because the loops would happen more than they already do
                 for (int i = 0; i < 3; i++)
                 {
@@ -156,7 +150,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for naked triples
+                // Check for naked/locked triples - http://hodoku.sourceforge.net/en/tech_naked.php#n3
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindNaked(Puzzle.Blocks[i], 3)
@@ -165,7 +159,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for hidden triples
+                // Check for hidden triples - http://hodoku.sourceforge.net/en/tech_hidden.php#h3
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindHidden(Puzzle.Blocks[i], 3)
@@ -174,10 +168,10 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for X-Wings, Swordfish & Jellyfish
+                // Check for X-Wings, Swordfish & Jellyfish - http://hodoku.sourceforge.net/en/tech_fishb.php
                 if (FindFish(2) || FindFish(3) || FindFish(4)) { changed = true; continue; }
 
-                // Check for naked quads
+                // Check for naked quads - http://hodoku.sourceforge.net/en/tech_naked.php#n4
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindNaked(Puzzle.Blocks[i], 4)
@@ -186,7 +180,7 @@ namespace SudokuSolver.Core
                 }
                 if (changed) continue;
 
-                // Check for hidden quads
+                // Check for hidden quads - http://hodoku.sourceforge.net/en/tech_hidden.php#h2
                 for (int i = 0; i < 9; i++)
                 {
                     if (FindHidden(Puzzle.Blocks[i], 4)
@@ -390,7 +384,7 @@ namespace SudokuSolver.Core
                 var combo = points.Select(p => Puzzle[p].Candidates).UniteAll().ToArray();
                 if (combo.Length == amt)
                 {
-                    if (Puzzle.ChangeCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
+                    if (Puzzle.ChangeCandidates(indexes.Select(i => Puzzle[region.Points[i]].GetCanSeePoints()).IntersectAll(), combo))
                     {
                         Puzzle.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
                         return true;

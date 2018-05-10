@@ -23,7 +23,14 @@ namespace SudokuSolver.Core
                 row[i] = input[(i * amt) + x];
             return row;
         }
-
+        
+        public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> input)
+        {
+            var output = new T[0];
+            foreach (IEnumerable<T> i in input)
+                output = output.Intersect(i).ToArray();
+            return output;
+        }
         public static IEnumerable<T> UniteAll<T>(this IEnumerable<IEnumerable<T>> input)
         {
             var output = new T[0];

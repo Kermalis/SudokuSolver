@@ -41,7 +41,7 @@ namespace SudokuSolver.Core
             _snapshots = new List<Snapshot>();
         }
 
-        public void Set(int newVal)
+        public void Set(int newVal, bool refreshOthers = false)
         {
             int oldVal = Value;
             Value = newVal;
@@ -49,15 +49,15 @@ namespace SudokuSolver.Core
             {
                 Candidates = new HashSet<int>(Enumerable.Range(1, 9));
                 puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { oldVal }, false);
-                puzzle.RefreshCandidates();
             }
             else
             {
                 Candidates.Clear();
                 puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { newVal });
             }
+            if (refreshOthers) puzzle.RefreshCandidates();
         }
-        public void ChangeOriginal(int value) => Set(OriginalValue = value);
+        public void ChangeOriginal(int value) => Set(OriginalValue = value, true);
         public void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
 
         public override int GetHashCode() => Point.GetHashCode();

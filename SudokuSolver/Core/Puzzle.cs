@@ -44,7 +44,7 @@ namespace SudokuSolver.Core
         }
 
         public void Log(string technique, IEnumerable<SPoint> culprits, string format, params object[] args) => Log(technique, culprits.Select(p => this[p]), format, args);
-        public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-25}" + format, args), culprits);
+        public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-20}" + format, args), culprits);
         public void Log(string format, params object[] args) => Log(string.Format(format, args));
         public void Log(string s, IEnumerable<Cell> culprits = null)
         {
@@ -65,6 +65,10 @@ namespace SudokuSolver.Core
         }
         public void RefreshCandidates()
         {
+            for (int x = 0; x < 9; x++)
+                for (int y = 0; y < 9; y++)
+                    foreach (var i in Enumerable.Range(1, 9).Except(this[x, y].Candidates))
+                        this[x, y].Candidates.Add(i);
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
                     if (this[x, y] != 0) this[x, y].Set(this[x, y]);

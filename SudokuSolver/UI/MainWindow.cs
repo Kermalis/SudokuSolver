@@ -18,21 +18,19 @@ namespace SudokuSolver
             puzzleLabel.Text = "";
             statusLabel.Text = "";
             logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
-            sudokuBoard.CellChanged += SudokuBoard_CellChanged;
+            sudokuBoard.CellChanged += (cell) => ChangeState(true, true);
         }
 
-        private void SudokuBoard_CellChanged(Cell cell)
-        {
-            ChangeSolveButtonState(true);
-            saveAsToolStripMenuItem.Enabled = true;
-        }
         private void LogList_SelectedIndexChanged(object sender, EventArgs e) => sudokuBoard.ReDraw(true, logList.SelectedIndex);
-        private void ChangeSolveButtonState(bool state) => solveButton.Enabled = state;
+        private void ChangeState(bool solveButtonState, bool saveState)
+        {
+            solveButton.Enabled = solveButtonState;
+            saveAsToolStripMenuItem.Enabled = saveState;
+        }
 
         private void ChangePuzzle(string name, bool buttonState)
         {
-            ChangeSolveButtonState(buttonState);
-            saveAsToolStripMenuItem.Enabled = false;
+            ChangeState(buttonState, false);
             puzzleLabel.Text = name + " Puzzle";
             statusLabel.Text = "";
             logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
@@ -78,7 +76,7 @@ namespace SudokuSolver
         }
         private void SolvePuzzle(object sender, EventArgs e)
         {
-            ChangeSolveButtonState(false);
+            ChangeState(false, saveAsToolStripMenuItem.Enabled);
             stopwatch = new Stopwatch();
             var bw = new BackgroundWorker();
             bw.DoWork += solver.DoWork;
