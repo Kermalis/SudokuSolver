@@ -45,6 +45,7 @@ namespace SudokuSolver.Core
 
         public void Log(string technique, IEnumerable<SPoint> culprits, string format, params object[] args) => Log(technique, culprits.Select(p => this[p]), format, args);
         public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-25}" + format, args), culprits);
+        public void Log(string format, params object[] args) => Log(string.Format(format, args));
         public void Log(string s, IEnumerable<Cell> culprits = null)
         {
             for (int x = 0; x < 9; x++)
@@ -94,7 +95,7 @@ namespace SudokuSolver.Core
                 {
                     string line = "";
                     for (int y = 0; y < 9; y++)
-                        line += this[y, x] == 0 ? "-" : this[y, x].Value.ToString();
+                        line += this[y, x].OriginalValue == 0 ? "-" : this[y, x].OriginalValue.ToString();
                     file.WriteLine(line);
                 }
         }
