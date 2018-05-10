@@ -77,6 +77,11 @@ namespace SudokuSolver
         private void SolvePuzzle(object sender, EventArgs e)
         {
             ChangeState(false, saveAsToolStripMenuItem.Enabled);
+            if (solver.Puzzle.IsCustom) // This check goes here so the solver isn't slowed down. The solver on its own would not have to do this
+                for (int x = 0; x < 9; x++)
+                    for (int y = 0; y < 9; y++)
+                        if (solver.Puzzle[x, y] != solver.Puzzle[x, y].OriginalValue)
+                            solver.Puzzle[x, y].Set(0);
             stopwatch = new Stopwatch();
             var bw = new BackgroundWorker();
             bw.DoWork += solver.DoWork;
