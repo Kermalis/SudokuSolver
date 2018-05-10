@@ -30,16 +30,17 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.sudokuBoard = new SudokuSolver.UI.SudokuBoard();
             this.logList = new System.Windows.Forms.ListBox();
             this.solveButton = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.puzzleLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.sudokuBoard = new SudokuSolver.UI.SudokuBoard();
-            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -66,6 +67,17 @@
             this.splitContainer1.SplitterWidth = 1;
             this.splitContainer1.TabIndex = 2;
             // 
+            // sudokuBoard
+            // 
+            this.sudokuBoard.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.sudokuBoard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sudokuBoard.Font = new System.Drawing.Font("Leelawadee", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.sudokuBoard.Location = new System.Drawing.Point(0, 0);
+            this.sudokuBoard.Margin = new System.Windows.Forms.Padding(0);
+            this.sudokuBoard.Name = "sudokuBoard";
+            this.sudokuBoard.Size = new System.Drawing.Size(470, 470);
+            this.sudokuBoard.TabIndex = 0;
+            // 
             // logList
             // 
             this.logList.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -79,13 +91,14 @@
             // 
             // solveButton
             // 
+            this.solveButton.Enabled = false;
             this.solveButton.Location = new System.Drawing.Point(448, 27);
             this.solveButton.Name = "solveButton";
             this.solveButton.Size = new System.Drawing.Size(75, 23);
             this.solveButton.TabIndex = 1;
             this.solveButton.Text = "Solve";
             this.solveButton.UseVisualStyleBackColor = true;
-            this.solveButton.Click += new System.EventHandler(this.SolveButton_Click);
+            this.solveButton.Click += new System.EventHandler(this.SolvePuzzle);
             // 
             // menuStrip1
             // 
@@ -101,14 +114,24 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.newToolStripMenuItem,
-            this.openToolStripMenuItem});
+            this.openToolStripMenuItem,
+            this.saveAsToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
+            // newToolStripMenuItem
+            // 
+            this.newToolStripMenuItem.Name = "newToolStripMenuItem";
+            this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.newToolStripMenuItem.Text = "New";
+            this.newToolStripMenuItem.Click += new System.EventHandler(this.NewPuzzle);
+            // 
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
+            this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.openToolStripMenuItem.Text = "Open";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.OpenPuzzle);
@@ -136,23 +159,14 @@
             this.statusLabel.Size = new System.Drawing.Size(66, 17);
             this.statusLabel.Text = "statusLabel";
             // 
-            // sudokuBoard
+            // saveAsToolStripMenuItem
             // 
-            this.sudokuBoard.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.sudokuBoard.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.sudokuBoard.Font = new System.Drawing.Font("Leelawadee", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sudokuBoard.Location = new System.Drawing.Point(0, 0);
-            this.sudokuBoard.Margin = new System.Windows.Forms.Padding(0);
-            this.sudokuBoard.Name = "sudokuBoard";
-            this.sudokuBoard.Size = new System.Drawing.Size(470, 470);
-            this.sudokuBoard.TabIndex = 0;
-            // 
-            // newToolStripMenuItem
-            // 
-            this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.newToolStripMenuItem.Text = "New";
-            this.newToolStripMenuItem.Click += new System.EventHandler(this.NewPuzzle);
+            this.saveAsToolStripMenuItem.Enabled = false;
+            this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
+            this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveAsToolStripMenuItem.Text = "Save As";
+            this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.SavePuzzle);
             // 
             // MainWindow
             // 
@@ -193,6 +207,7 @@
         private System.Windows.Forms.ListBox logList;
         private System.Windows.Forms.ToolStripStatusLabel puzzleLabel;
         private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
     }
 }
 

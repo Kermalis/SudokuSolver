@@ -45,9 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\Board.cs" />
     <Compile Include="Core\Cell.cs" />
     <Compile Include="Core\Extensions.cs" />
+    <Compile Include="Core\Puzzle.cs" />
     <Compile Include="Core\Region.cs" />
     <Compile Include="Core\Solver.cs" />
     <Compile Include="Core\SPoint.cs" />

@@ -15,7 +15,7 @@ namespace SudokuSolver.Core
         public readonly SPoint[] Points;
         public readonly Cell[] Cells;
 
-        public Region(Board board, SudokuRegion region, int index)
+        public Region(Puzzle puzzle, SudokuRegion region, int index)
         {
             switch (region)
             {
@@ -42,7 +42,7 @@ namespace SudokuSolver.Core
                         Points[i] = new SPoint(index, i);
                     break;
             }
-            Cells = Points.Select(p => board[p]).ToArray();
+            Cells = Points.Select(p => puzzle[p]).ToArray();
         }
 
         public int[] GetRegion() => Cells.Select(c => c.Value).ToArray();

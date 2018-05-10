@@ -29,11 +29,11 @@ namespace SudokuSolver.Core
         List<Snapshot> _snapshots;
         public Snapshot[] Snapshots { get => _snapshots.ToArray(); }
 
-        Board _board;
+        Puzzle puzzle;
 
-        public Cell(Board board, int value, SPoint point)
+        public Cell(Puzzle board, int value, SPoint point)
         {
-            _board = board;
+            puzzle = board;
             OriginalValue = Value = value;
             Point = point;
             Block = (point.X / 3) + (3 * (point.Y / 3));
@@ -46,13 +46,13 @@ namespace SudokuSolver.Core
             if (newVal == 0)
             {
                 Candidates = new HashSet<int>(Enumerable.Range(1, 9));
-                _board.ChangeCandidates(GetCanSeePoints(), new int[] { Value }, false);
-                _board.RefreshCandidates();
+                puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { Value }, false);
+                puzzle.RefreshCandidates();
             }
             else
             {
                 Candidates.Clear();
-                _board.ChangeCandidates(GetCanSeePoints(), new int[] { newVal });
+                puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { newVal });
             }
             Value = newVal;
         }
@@ -84,7 +84,7 @@ namespace SudokuSolver.Core
         public static bool operator !=(Cell lhs, Cell rhs) => !lhs.Equals(rhs);
 
         // Returns other cells the input cell can see
-        internal Cell[] GetCanSee() => Board.Columns[Point.X].Cells.Union(Board.Rows[Point.Y].Cells).Union(Board.Blocks[Block].Cells).Except(new Cell[] { this }).ToArray();
+        internal Cell[] GetCanSee() => Puzzle.Columns[Point.X].Cells.Union(Puzzle.Rows[Point.Y].Cells).Union(Puzzle.Blocks[Block].Cells).Except(new Cell[] { this }).ToArray();
         internal SPoint[] GetCanSeePoints() => GetCanSee().Select(c => c.Point).ToArray();
     }
 }

@@ -4,25 +4,25 @@ using System.Linq;
 
 namespace SudokuSolver.Core
 {
-    class Solver
+    public class Solver
     {
-        Board board;
+        public readonly Puzzle Puzzle;
 
         string[] fishStr = new string[] { "", "", "X-Wing", "Swordfish", "Jellyfish" };
         string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
 
-        public Solver(int[][] inBoard, bool bCustom, out Board outBoard) => outBoard = (this.board = new Board(inBoard, bCustom));
+        public Solver(int[][] inBoard, bool bCustom) => Puzzle = new Puzzle(inBoard, bCustom);
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
-            board.RefreshCandidates();
-            board.Log("Begin");
-            bool changed, done;
+            Puzzle.RefreshCandidates();
+            Puzzle.Log("Begin");
+            bool changed, solved;
 
             do
             {
                 changed = false; // If this is true at the end of the loop, loop again
-                done = true; // If this is true after a segment, the puzzle is solved and we can break
+                solved = true; // If this is true after a segment, the puzzle is solved and we can break
 
                 // Check for naked singles or a completed puzzle
                 for (int x = 0; x < 9; x++)
@@ -30,34 +30,34 @@ namespace SudokuSolver.Core
                     for (int y = 0; y < 9; y++)
                     {
                         SPoint p = new SPoint(x, y);
-                        if (board[p] != 0) continue;
+                        if (Puzzle[p] != 0) continue;
 
-                        done = false;
+                        solved = false;
                         // Check for naked singles
-                        var a = board[p].Candidates.ToArray();
+                        var a = Puzzle[p].Candidates.ToArray();
                         if (a.Length == 1)
                         {
-                            board[p].Set(a[0]);
-                            board.Log("Naked single", new SPoint[] { p }, "{0}: {1}", p, a[0]);
+                            Puzzle[p].Set(a[0]);
+                            Puzzle.Log("Naked single", new SPoint[] { p }, "{0}: {1}", p, a[0]);
                             changed = true;
                         }
                     }
                 }
-                if (done) break;
+                if (solved) break;
                 if (changed) continue;
 
                 // Check for hidden singles
                 for (int i = 0; i < 9; i++)
                 {
-                    foreach (Region[] r in Board.Regions)
+                    foreach (Region[] r in Puzzle.Regions)
                     {
                         for (int v = 1; v <= 9; v++)
                         {
                             SPoint[] p = r[i].GetPointsWithCandidate(v);
                             if (p.Length == 1)
                             {
-                                board[p[0]].Set(v);
-                                board.Log("Hidden single", p, "{0}: {1}", p[0], v);
+                                Puzzle[p[0]].Set(v);
+                                Puzzle.Log("Hidden single", p, "{0}: {1}", p[0], v);
                                 changed = true;
                             }
                         }
@@ -68,18 +68,18 @@ namespace SudokuSolver.Core
                 // Check for naked pairs
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindNaked(Board.Blocks[i], 2)
-                        || FindNaked(Board.Rows[i], 2)
-                        || FindNaked(Board.Columns[i], 2)) { changed = true; break; }
+                    if (FindNaked(Puzzle.Blocks[i], 2)
+                        || FindNaked(Puzzle.Rows[i], 2)
+                        || FindNaked(Puzzle.Columns[i], 2)) { changed = true; break; }
                 }
                 if (changed) continue;
 
                 // Check for hidden pairs
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindHidden(Board.Blocks[i], 2)
-                        || FindHidden(Board.Rows[i], 2)
-                        || FindHidden(Board.Columns[i], 2)) { changed = true; break; }
+                    if (FindHidden(Puzzle.Blocks[i], 2)
+                        || FindHidden(Puzzle.Rows[i], 2)
+                        || FindHidden(Puzzle.Columns[i], 2)) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -96,14 +96,14 @@ namespace SudokuSolver.Core
                 // Check for Y-Wings
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindYWing(Board.Rows[i]) || FindYWing(Board.Columns[i])) { changed = true; break; }
+                    if (FindYWing(Puzzle.Rows[i]) || FindYWing(Puzzle.Columns[i])) { changed = true; break; }
                 }
                 if (changed) continue;
 
                 // Check for XYZ-Wings
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindXYZWing(Board.Rows[i]) || FindXYZWing(Board.Columns[i])) { changed = true; break; }
+                    if (FindXYZWing(Puzzle.Rows[i]) || FindXYZWing(Puzzle.Columns[i])) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -120,8 +120,8 @@ namespace SudokuSolver.Core
                     SPoint[][] blockrow = new SPoint[3][], blockcol = new SPoint[3][];
                     for (int r = 0; r < 3; r++)
                     {
-                        blockrow[r] = Board.Blocks[r + (i * 3)].Points;
-                        blockcol[r] = Board.Blocks[i + (r * 3)].Points;
+                        blockrow[r] = Puzzle.Blocks[r + (i * 3)].Points;
+                        blockcol[r] = Puzzle.Blocks[i + (r * 3)].Points;
                     }
                     for (int r = 0; r < 3; r++) // 3 blocks in a blockrow/blockcolumn
                     {
@@ -129,8 +129,8 @@ namespace SudokuSolver.Core
                         for (int j = 0; j < 3; j++) // 3 rows/columns in block
                         {
                             // The 3 cells' candidates in a block's row/column
-                            rowCand[j] = blockrow[r].GetRow(j).Select(p => board[p].Candidates).UniteAll().ToArray();
-                            colCand[j] = blockcol[r].GetColumn(j).Select(p => board[p].Candidates).UniteAll().ToArray();
+                            rowCand[j] = blockrow[r].GetRow(j).Select(p => Puzzle[p].Candidates).UniteAll().ToArray();
+                            colCand[j] = blockcol[r].GetColumn(j).Select(p => Puzzle[p].Candidates).UniteAll().ToArray();
                         }
                         // Now check if a row has a distinct candidate
                         var zero_distinct = rowCand[0].Except(rowCand[1]).Except(rowCand[2]);
@@ -159,18 +159,18 @@ namespace SudokuSolver.Core
                 // Check for naked triples
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindNaked(Board.Blocks[i], 3)
-                        || FindNaked(Board.Rows[i], 3)
-                        || FindNaked(Board.Columns[i], 3)) { changed = true; break; }
+                    if (FindNaked(Puzzle.Blocks[i], 3)
+                        || FindNaked(Puzzle.Rows[i], 3)
+                        || FindNaked(Puzzle.Columns[i], 3)) { changed = true; break; }
                 }
                 if (changed) continue;
 
                 // Check for hidden triples
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindHidden(Board.Blocks[i], 3)
-                        || FindHidden(Board.Rows[i], 3)
-                        || FindHidden(Board.Columns[i], 3)) { changed = true; break; }
+                    if (FindHidden(Puzzle.Blocks[i], 3)
+                        || FindHidden(Puzzle.Rows[i], 3)
+                        || FindHidden(Puzzle.Columns[i], 3)) { changed = true; break; }
                 }
                 if (changed) continue;
 
@@ -180,31 +180,30 @@ namespace SudokuSolver.Core
                 // Check for naked quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindNaked(Board.Blocks[i], 4)
-                        || FindNaked(Board.Rows[i], 4)
-                        || FindNaked(Board.Columns[i], 4)) { changed = true; break; }
+                    if (FindNaked(Puzzle.Blocks[i], 4)
+                        || FindNaked(Puzzle.Rows[i], 4)
+                        || FindNaked(Puzzle.Columns[i], 4)) { changed = true; break; }
                 }
                 if (changed) continue;
 
                 // Check for hidden quads
                 for (int i = 0; i < 9; i++)
                 {
-                    if (FindHidden(Board.Blocks[i], 4)
-                        || FindHidden(Board.Rows[i], 4)
-                        || FindHidden(Board.Columns[i], 4)) { changed = true; break; }
+                    if (FindHidden(Puzzle.Blocks[i], 4)
+                        || FindHidden(Puzzle.Rows[i], 4)
+                        || FindHidden(Puzzle.Columns[i], 4)) { changed = true; break; }
                 }
 
             } while (changed);
 
-            board.Log(done ? "Solver completed the puzzle" : "Solver failed");
-            e.Result = board;
+            e.Result = solved;
         }
 
         bool FindXYZWing(Region region)
         {
             bool changed = false;
-            var points2 = region.Points.Where(p => board[p].Candidates.Count == 2).ToArray();
-            var points3 = region.Points.Where(p => board[p].Candidates.Count == 3).ToArray();
+            var points2 = region.Points.Where(p => Puzzle[p].Candidates.Count == 2).ToArray();
+            var points3 = region.Points.Where(p => Puzzle[p].Candidates.Count == 3).ToArray();
             if (points2.Length > 0 && points3.Length > 0)
             {
                 for (int i = 0; i < points2.Length; i++)
@@ -213,21 +212,21 @@ namespace SudokuSolver.Core
                     for (int j = 0; j < points3.Length; j++)
                     {
                         SPoint p3 = points3[j];
-                        if (board[p2].Candidates.Intersect(board[p3].Candidates).Count() != 2) continue;
+                        if (Puzzle[p2].Candidates.Intersect(Puzzle[p3].Candidates).Count() != 2) continue;
 
-                        var p3Sees = board[p3].GetCanSeePoints().Except(region.Points)
-                            .Where(p => board[p].Candidates.Count == 2 // If it has 2 candidates
-                            && board[p].Candidates.Intersect(board[p3].Candidates).Count() == 2 // Shares them both with p3
-                            && board[p].Candidates.Intersect(board[p2].Candidates).Count() == 1); // And shares one with p2
+                        var p3Sees = Puzzle[p3].GetCanSeePoints().Except(region.Points)
+                            .Where(p => Puzzle[p].Candidates.Count == 2 // If it has 2 candidates
+                            && Puzzle[p].Candidates.Intersect(Puzzle[p3].Candidates).Count() == 2 // Shares them both with p3
+                            && Puzzle[p].Candidates.Intersect(Puzzle[p2].Candidates).Count() == 1); // And shares one with p2
                         foreach (SPoint p2_2 in p3Sees)
                         {
-                            var allSee = board[p2].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints()).Intersect(board[p2_2].GetCanSeePoints());
-                            var allHave = board[p2].Candidates.Intersect(board[p3].Candidates).Intersect(board[p2_2].Candidates).ToArray(); // Will be 1 Length
-                            if (board.ChangeCandidates(allSee, allHave))
+                            var allSee = Puzzle[p2].GetCanSeePoints().Intersect(Puzzle[p3].GetCanSeePoints()).Intersect(Puzzle[p2_2].GetCanSeePoints());
+                            var allHave = Puzzle[p2].Candidates.Intersect(Puzzle[p3].Candidates).Intersect(Puzzle[p2_2].Candidates).ToArray(); // Will be 1 Length
+                            if (Puzzle.ChangeCandidates(allSee, allHave))
                             {
                                 changed = true;
                                 var culprits = new SPoint[] { p2, p3, p2_2 };
-                                board.Log("XYZ-Wing", culprits, "{0} see {1}: {2}", culprits.Print(), allSee.Print(), allHave[0]);
+                                Puzzle.Log("XYZ-Wing", culprits, "{0} see {1}: {2}", culprits.Print(), allSee.Print(), allHave[0]);
                             }
                         }
                     }
@@ -238,7 +237,7 @@ namespace SudokuSolver.Core
 
         bool FindYWing(Region region)
         {
-            var points = region.Points.Where(p => board[p].Candidates.Count == 2).ToArray();
+            var points = region.Points.Where(p => Puzzle[p].Candidates.Count == 2).ToArray();
             if (points.Length > 1)
             {
                 for (int i = 0; i < points.Length; i++)
@@ -247,27 +246,27 @@ namespace SudokuSolver.Core
                     for (int j = i + 1; j < points.Length; j++)
                     {
                         SPoint p2 = points[j];
-                        var inter = board[p1].Candidates.Intersect(board[p2].Candidates).ToArray();
+                        var inter = Puzzle[p1].Candidates.Intersect(Puzzle[p2].Candidates).ToArray();
                         if (inter.Length != 1) continue;
 
                         var a = new int[] { inter[0] };
-                        int other1 = board[p1].Candidates.Except(a).ToArray()[0],
-                            other2 = board[p2].Candidates.Except(a).ToArray()[0];
+                        int other1 = Puzzle[p1].Candidates.Except(a).ToArray()[0],
+                            other2 = Puzzle[p2].Candidates.Except(a).ToArray()[0];
 
                         var b = new SPoint[] { p1, p2 };
                         foreach (SPoint point in b)
                         {
-                            var p3a = board[point].GetCanSeePoints().Except(points).Where(p => board[p].Candidates.Count == 2 && board[p].Candidates.Intersect(new int[] { other1, other2 }).Count() == 2).ToArray();
+                            var p3a = Puzzle[point].GetCanSeePoints().Except(points).Where(p => Puzzle[p].Candidates.Count == 2 && Puzzle[p].Candidates.Intersect(new int[] { other1, other2 }).Count() == 2).ToArray();
                             if (p3a.Length == 1) // Example: p1 and p3 see each other, so remove similarities from p2 and p3
                             {
                                 SPoint p3 = p3a[0];
                                 SPoint pOther = b.Single(p => p != point);
-                                var common = board[pOther].GetCanSeePoints().Intersect(board[p3].GetCanSeePoints());
-                                var cand = board[pOther].Candidates.Intersect(board[p3].Candidates).ToArray(); // Will just be 1 candidate
-                                if (board.ChangeCandidates(common, cand))
+                                var common = Puzzle[pOther].GetCanSeePoints().Intersect(Puzzle[p3].GetCanSeePoints());
+                                var cand = Puzzle[pOther].Candidates.Intersect(Puzzle[p3].Candidates).ToArray(); // Will just be 1 candidate
+                                if (Puzzle.ChangeCandidates(common, cand))
                                 {
                                     var culprits = new SPoint[] { p1, p2, p3 };
-                                    board.Log("Y-Wing", culprits, "{0}: {1}", culprits.Print(), cand[0]);
+                                    Puzzle.Log("Y-Wing", culprits, "{0}: {1}", culprits.Print(), cand[0]);
                                     return true;
                                 }
                             }
@@ -291,8 +290,8 @@ namespace SudokuSolver.Core
         {
             if (loop == amt)
             {
-                SPoint[][] rowPoints = indexes.Select(i => Board.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
-                    colPoints = indexes.Select(i => Board.Columns[i].GetPointsWithCandidate(cand)).ToArray();
+                SPoint[][] rowPoints = indexes.Select(i => Puzzle.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
+                    colPoints = indexes.Select(i => Puzzle.Columns[i].GetPointsWithCandidate(cand)).ToArray();
 
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
@@ -300,18 +299,18 @@ namespace SudokuSolver.Core
                 if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
-                    if (board.ChangeCandidates(row2D.Select(p => Board.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
+                    if (Puzzle.ChangeCandidates(row2D.Select(p => Puzzle.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
                     {
-                        board.Log(fishStr[amt], row2D, "{0}: {1}", row2D.Print(), cand);
+                        Puzzle.Log(fishStr[amt], row2D, "{0}: {1}", row2D.Print(), cand);
                         return true;
                     }
                 }
                 if (colLengths.Max() == amt && colLengths.Min() > 0 && colPoints.Select(parr => parr.Select(p => p.Y)).UniteAll().Count() <= amt)
                 {
                     var col2D = colPoints.UniteAll();
-                    if (board.ChangeCandidates(col2D.Select(p => Board.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
+                    if (Puzzle.ChangeCandidates(col2D.Select(p => Puzzle.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
                     {
-                        board.Log(fishStr[amt], col2D, "{0}: {1}", col2D.Print(), cand);
+                        Puzzle.Log(fishStr[amt], col2D, "{0}: {1}", col2D.Print(), cand);
                         return true;
                     }
                 }
@@ -329,16 +328,16 @@ namespace SudokuSolver.Core
 
         bool FindLocked(bool doRows, int rc, int value)
         {
-            var with = (doRows ? Board.Rows : Board.Columns)[rc].GetPointsWithCandidate(value);
+            var with = (doRows ? Puzzle.Rows : Puzzle.Columns)[rc].GetPointsWithCandidate(value);
 
             // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
             if (with.Count() == 3 || with.Count() == 2)
             {
-                var blocks = with.Select(p => board[p].Block).Distinct().ToArray();
+                var blocks = with.Select(p => Puzzle[p].Block).Distinct().ToArray();
                 if (blocks.Length == 1)
-                    if (board.ChangeCandidates(Board.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
+                    if (Puzzle.ChangeCandidates(Puzzle.Blocks[blocks[0]].Points.Except(with), new int[] { value }))
                     {
-                        board.Log("Locked candidate", with, "{4} {0} locks within block {1}: {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
+                        Puzzle.Log("Locked candidate", with, "{4} {0} locks within block {1}: {2}: {3}", doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), blocks[0] + 1, with.Print(), value, doRows ? "Row" : "Column");
                         return true;
                     }
             }
@@ -348,7 +347,7 @@ namespace SudokuSolver.Core
         // Find hidden pairs/triples/quadruples
         bool FindHidden(Region region, int amt)
         {
-            if (region.Points.Count(p => board[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
+            if (region.Points.Count(p => Puzzle[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
                 return false;
             return DoHidden(region, 0, amt, new int[amt]);
         }
@@ -358,11 +357,11 @@ namespace SudokuSolver.Core
             {
                 var points = cand.Select(c => region.GetPointsWithCandidate(c)).UniteAll().ToArray();
                 if (points.Length != amt // There aren't "amt" cells for our tuple to be in
-                    || points.Select(p => board[p].Candidates).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
-                    || cand.Any(v => !points.Any(p => board[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
-                if (board.ChangeCandidates(points, Enumerable.Range(1, 9).Except(cand)))
+                    || points.Select(p => Puzzle[p].Candidates).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
+                    || cand.Any(v => !points.Any(p => Puzzle[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
+                if (Puzzle.ChangeCandidates(points, Enumerable.Range(1, 9).Except(cand)))
                 {
-                    board.Log("Hidden " + tupleStr[amt], points, "{0}: {1}", points.Print(), cand.Print());
+                    Puzzle.Log("Hidden " + tupleStr[amt], points, "{0}: {1}", points.Print(), cand.Print());
                     return true;
                 }
             }
@@ -380,7 +379,7 @@ namespace SudokuSolver.Core
         // Find naked pairs/triples/quadruples
         bool FindNaked(Region region, int amt)
         {
-            if (region.Points.Count(p => board[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
+            if (region.Points.Count(p => Puzzle[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
                 return false;
             return DoNaked(region, 0, amt, new SPoint[amt], new int[amt]);
         }
@@ -388,12 +387,12 @@ namespace SudokuSolver.Core
         {
             if (loop == amt)
             {
-                var combo = points.Select(p => board[p].Candidates).UniteAll().ToArray();
+                var combo = points.Select(p => Puzzle[p].Candidates).UniteAll().ToArray();
                 if (combo.Length == amt)
                 {
-                    if (board.ChangeCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
+                    if (Puzzle.ChangeCandidates(Enumerable.Range(0, 9).Except(indexes).Select(i => region.Points[i]), combo))
                     {
-                        board.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
+                        Puzzle.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
                         return true;
                     }
                 }
@@ -403,7 +402,7 @@ namespace SudokuSolver.Core
                 for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
                 {
                     SPoint p = region.Points[i];
-                    if (board[p].Candidates.Count == 0) continue;
+                    if (Puzzle[p].Candidates.Count == 0) continue;
                     points[loop] = p;
                     indexes[loop] = i;
                     if (DoNaked(region, loop + 1, amt, points, indexes)) return true;
@@ -420,9 +419,9 @@ namespace SudokuSolver.Core
             {
                 if (i == ignoreBlock) continue;
                 var rcs = doRows ? blockrcs[i].GetRow(rc) : blockrcs[i].GetColumn(rc);
-                if (board.ChangeCandidates(rcs, cand)) changed = true;
+                if (Puzzle.ChangeCandidates(rcs, cand)) changed = true;
             }
-            if (changed) board.Log("Pointing couple", doRows ? blockrcs[ignoreBlock].GetRow(rc) : blockrcs[ignoreBlock].GetColumn(rc),
+            if (changed) Puzzle.Log("Pointing couple", doRows ? blockrcs[ignoreBlock].GetRow(rc) : blockrcs[ignoreBlock].GetColumn(rc),
                 "Starting in block{0} {1}'s block {2}, {0} {3}: {4}", doRows ? "row" : "column", current + 1, ignoreBlock + 1, doRows ? SPoint.RowL(rc) : (rc + 1).ToString(), cand.Print());
             return changed;
         }

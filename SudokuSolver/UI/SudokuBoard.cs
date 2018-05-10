@@ -18,7 +18,7 @@ namespace SudokuSolver.UI
         public event CellChangedEventHandler CellChanged;
         SPoint selected = null;
 
-        Board board;
+        Puzzle board;
 
         bool bCandidates = false;
         int snap = -1;
@@ -141,7 +141,7 @@ namespace SudokuSolver.UI
             Invalidate();
         }
 
-        public void SetBoard(Board newBoard)
+        public void SetBoard(Puzzle newBoard)
         {
             board = newBoard;
             ReDraw(false);
