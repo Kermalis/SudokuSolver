@@ -14,7 +14,6 @@ namespace SudokuSolver.Core
                 column[i] = input[(x * amt) + i];
             return column;
         }
-
         public static T[] GetRow<T>(this T[] input, int x)
         {
             int amt = (int)Math.Sqrt(input.Length);
@@ -26,6 +25,7 @@ namespace SudokuSolver.Core
         
         public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> input)
         {
+            if (input.Count() == 0) return new T[0];
             var inp = input.ToArray();
             IEnumerable<T> output = inp[0];
             for (int i = 1; i < inp.Length; i++)
