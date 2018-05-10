@@ -220,7 +220,7 @@ namespace SudokuSolver.Core
                             {
                                 changed = true;
                                 var culprits = new SPoint[] { p2, p3, p2_2 };
-                                Puzzle.Log("XYZ-Wing", culprits, "{0} see {1}: {2}", culprits.Print(), allSee.Print(), allHave[0]);
+                                Puzzle.Log("XYZ-Wing", culprits, "{0}: {1}", culprits.Print(), allHave[0]);
                             }
                         }
                     }
@@ -373,8 +373,6 @@ namespace SudokuSolver.Core
         // Find naked pairs/triples/quadruples
         bool FindNaked(Region region, int amt)
         {
-            if (region.Points.Count(p => Puzzle[p].Candidates.Count > 0) == amt) // If there are only "amt" cells with candidates, we don't have to waste our time
-                return false;
             return DoNaked(region, 0, amt, new SPoint[amt], new int[amt]);
         }
         bool DoNaked(Region region, int loop, int amt, SPoint[] points, int[] indexes)
