@@ -171,12 +171,6 @@ namespace SudokuSolver.Core
                 // Check for X-Wings, Swordfish & Jellyfish - http://hodoku.sourceforge.net/en/tech_fishb.php
                 if (FindFish(2) || FindFish(3) || FindFish(4)) { changed = true; continue; }
 
-                // Check for unique rectangles type 1 - http://hodoku.sourceforge.net/en/tech_ur.php#u1
-                if (FindUR1()) { changed = true; continue; }
-
-                // Check for unique rectangles type 2 - http://hodoku.sourceforge.net/en/tech_ur.php#u2
-                if (FindUR2()) { changed = true; continue; }
-
                 // Check for naked quads - http://hodoku.sourceforge.net/en/tech_naked.php#n4
                 for (int i = 0; i < 9; i++)
                 {
@@ -194,6 +188,9 @@ namespace SudokuSolver.Core
                         || FindHidden(Puzzle.Columns[i], 4)) { changed = true; break; }
                 }
 
+                // Check for unique rectangles - http://hodoku.sourceforge.net/en/tech_ur.php
+                if (FindUR1() || FindUR2()) { changed = true; continue; }
+
             } while (changed);
 
             e.Result = solved;
@@ -205,25 +202,26 @@ namespace SudokuSolver.Core
             for (int i = 0; i < 9; i++)
             {
                 var c1 = Puzzle.Columns[i];
-                for (int n = 1; n <= 9; n++)
+                for (int j = i + 1; j < 9; j++)
                 {
-                    for (int n2 = n + 1; n2 <= 9; n2++)
+                    var c2 = Puzzle.Columns[j];
+                    for (int n = 1; n <= 9; n++)
                     {
-                        var cand = new int[] { n, n2 };
-                        var aCulprits = c1.Cells.Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).Select(c => c.Point).ToArray();
-                        if (aCulprits.Length != 2) continue;
-                        for (int j = 0; j < 9; j++)
+                        for (int n2 = n + 1; n2 <= 9; n2++)
                         {
-                            if (j == i) continue;
-                            var c2 = Puzzle.Columns[j];
-                            var bCulprits = new Cell[] { c2.Cells[aCulprits[0].Y], c2.Cells[aCulprits[1].Y] };
-                            if (!bCulprits.All(c => c.Candidates.ContainsAll(cand) && c.Candidates.Count == 3) || !bCulprits[0].Candidates.SetEquals(bCulprits[1].Candidates)) continue;
+                            var cand = new int[] { n, n2 };
+                            var twoCulprits = c1.Cells.Union(c2.Cells).Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).ToArray();
+                            var threeCulprits = c1.Cells.Union(c2.Cells).Where(c => c.Candidates.Count == 3 && c.Candidates.ContainsAll(cand)).ToArray();
+                            if (twoCulprits.Length != 2 || threeCulprits.Length != 2) continue;
+                            if (twoCulprits.Select(c => c.Point.X).Union(threeCulprits.Select(c => c.Point.X)).Distinct().Count() != 2 ||
+                                twoCulprits.Select(c => c.Point.Y).Union(threeCulprits.Select(c => c.Point.Y)).Distinct().Count() != 2) continue; // Must be a rectangle
+
+                            if (!threeCulprits[0].Candidates.SetEquals(threeCulprits[1].Candidates)) continue; // UR type 2 rule
                             // Found UR type 2
-                            var remove = bCulprits[0].Candidates.Except(cand).ToArray();
-                            if (Puzzle.ChangeCandidates(bCulprits[0].GetCanSeePoints().Intersect(bCulprits[1].GetCanSeePoints()), remove))
+                            var remove = threeCulprits[0].Candidates.Except(cand).ToArray();
+                            if (Puzzle.ChangeCandidates(threeCulprits[0].GetCanSeePoints().Intersect(threeCulprits[1].GetCanSeePoints()), remove))
                             {
-                                var culprits = aCulprits.Union(bCulprits.Select(c => c.Point));
-                                Puzzle.Log("Unique Rectangle", culprits, remove);
+                                Puzzle.Log("Unique Rectangle", twoCulprits.Union(threeCulprits), remove);
                                 return true;
                             }
                         }
@@ -232,33 +230,29 @@ namespace SudokuSolver.Core
             }
             return false;
         }
-
         bool FindUR1()
         {
             for (int i = 0; i < 9; i++)
             {
                 var c1 = Puzzle.Columns[i];
-                for (int n = 1; n <= 9; n++)
+                for (int j = i + 1; j < 9; j++)
                 {
-                    for (int n2 = n + 1; n2 <= 9; n2++)
+                    var c2 = Puzzle.Columns[j];
+                    for (int n = 1; n <= 9; n++)
                     {
-                        var cand = new int[] { n, n2 };
-                        var aCulprits = c1.Cells.Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).Select(c => c.Point).ToArray();
-                        if (aCulprits.Length != 2) continue;
-                        for (int j = 0; j < 9; j++)
+                        for (int n2 = n + 1; n2 <= 9; n2++)
                         {
-                            if (j == i) continue;
-                            var c2 = Puzzle.Columns[j];
-                            var bCulprits = new Cell[] { c2.Cells[aCulprits[0].Y], c2.Cells[aCulprits[1].Y] };
-                            if (!bCulprits.All(c => c.Candidates.ContainsAll(cand))
-                                || !bCulprits.Any(c => c.Candidates.Count == 2) || !bCulprits.Any(c => c.Candidates.Count > 2)) continue;
-                            // I added the second "Any" check for the case where you input a puzzle with two solutions
+                            var cand = new int[] { n, n2 };
+                            var twoCulprits = c1.Cells.Union(c2.Cells).Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).ToArray();
+                            var threeCulprits = c1.Cells.Union(c2.Cells).Where(c => c.Candidates.Count == 3 && c.Candidates.ContainsAll(cand)).ToArray();
+                            if (twoCulprits.Length != 3 || threeCulprits.Length != 1) continue;
+                            if (twoCulprits.Select(c => c.Point.X).Union(threeCulprits.Select(c => c.Point.X)).Distinct().Count() != 2 ||
+                                twoCulprits.Select(c => c.Point.Y).Union(threeCulprits.Select(c => c.Point.Y)).Distinct().Count() != 2) continue; // Must be a rectangle
+
                             // Found UR type 1
-                            var theOne = bCulprits.Single(c => c.Candidates.Count > 2);
-                            if (Puzzle.ChangeCandidates(new SPoint[] { theOne.Point }, cand))
+                            if (Puzzle.ChangeCandidates(threeCulprits.Select(c => c.Point), cand))
                             {
-                                var culprits = aCulprits.Union(bCulprits.Select(c => c.Point));
-                                Puzzle.Log("Unique Rectangle", culprits, cand);
+                                Puzzle.Log("Unique Rectangle", twoCulprits.Union(threeCulprits), cand);
                                 return true;
                             }
                         }
