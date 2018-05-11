@@ -56,6 +56,7 @@ namespace SudokuSolver.Core
         }
 
         // Add/Remove the following candidates at the following locations
+        public bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> cand, bool remove = true) => ChangeCandidates(cells.Select(c => c.Point), cand, remove);
         public bool ChangeCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand, bool remove = true)
         {
             bool changed = false;
