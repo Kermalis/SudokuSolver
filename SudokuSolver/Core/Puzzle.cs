@@ -43,10 +43,11 @@ namespace SudokuSolver.Core
             get => board[p.X][p.Y];
         }
 
+        public void Log(string technique, IEnumerable<SPoint> culprits, params int[] candidates) => Log(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidates.Length == 1 ? candidates[0].ToString() : candidates.Print());
+        public void Log(string technique, IEnumerable<Cell> culprits, params int[] candidates) => Log(technique, culprits.Select(c => c.Point), candidates);
         public void Log(string technique, IEnumerable<SPoint> culprits, string format, params object[] args) => Log(technique, culprits.Select(p => this[p]), format, args);
-        public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-20}" + format, args), culprits);
-        public void Log(string format, params object[] args) => Log(string.Format(format, args));
-        public void Log(string s, IEnumerable<Cell> culprits = null)
+        public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-20}" + format, args), culprits.ToArray());
+        public void Log(string s, params Cell[] culprits)
         {
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)

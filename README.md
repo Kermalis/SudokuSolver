@@ -19,3 +19,4 @@ Big thanks to http://www.sudokuwiki.org and http://hodoku.sourceforge.net for pr
 
 1. Maybe lower the framework version
 2. A way to toggle techniques and logging with the UI
+3. Log class

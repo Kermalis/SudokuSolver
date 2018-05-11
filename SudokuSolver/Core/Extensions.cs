@@ -22,7 +22,14 @@ namespace SudokuSolver.Core
                 row[i] = input[(i * amt) + x];
             return row;
         }
-        
+
+        public static bool ContainsAll<T>(this IEnumerable<T> input, params T[] values)
+        {
+            foreach (T o in values)
+                if (!input.Contains(o))
+                    return false;
+            return true;
+        }
         public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> input)
         {
             if (input.Count() == 0) return new T[0];

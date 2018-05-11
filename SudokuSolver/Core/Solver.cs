@@ -38,7 +38,7 @@ namespace SudokuSolver.Core
                         if (a.Length == 1)
                         {
                             Puzzle[p].Set(a[0]);
-                            Puzzle.Log("Naked single", new SPoint[] { p }, "{0}: {1}", p, a[0]);
+                            Puzzle.Log("Naked single", new SPoint[] { p }, a);
                             changed = true;
                         }
                     }
@@ -53,11 +53,11 @@ namespace SudokuSolver.Core
                     {
                         for (int v = 1; v <= 9; v++)
                         {
-                            SPoint[] p = r[i].GetPointsWithCandidate(v);
+                            SPoint[] p = r[i].GetPointsWithCandidates(v);
                             if (p.Length == 1)
                             {
                                 Puzzle[p[0]].Set(v);
-                                Puzzle.Log("Hidden single", p, "{0}: {1}", p[0], v);
+                                Puzzle.Log("Hidden single", p, v);
                                 changed = true;
                             }
                         }
@@ -171,6 +171,9 @@ namespace SudokuSolver.Core
                 // Check for X-Wings, Swordfish & Jellyfish - http://hodoku.sourceforge.net/en/tech_fishb.php
                 if (FindFish(2) || FindFish(3) || FindFish(4)) { changed = true; continue; }
 
+                // Check for unique rectangles type 1 - http://hodoku.sourceforge.net/en/tech_ur.php#u1
+                if (FindUR1()) { changed = true; continue; }
+
                 // Check for naked quads - http://hodoku.sourceforge.net/en/tech_naked.php#n4
                 for (int i = 0; i < 9; i++)
                 {
@@ -191,6 +194,41 @@ namespace SudokuSolver.Core
             } while (changed);
 
             e.Result = solved;
+        }
+
+        bool FindUR1()
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                var c1 = Puzzle.Columns[i];
+                for (int n = 1; n <= 9; n++)
+                {
+                    for (int n2 = n + 1; n2 <= 9; n2++)
+                    {
+                        var cand = new int[] { n, n2 };
+                        var aCulprits = c1.Cells.Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).Select(c => c.Point).ToArray();
+                        if (aCulprits.Length != 2) continue;
+                        for (int j = 0; j < 9; j++)
+                        {
+                            if (j == i) continue;
+                            var c2 = Puzzle.Columns[j];
+                            var bCulprits = new Cell[] { c2.Cells[aCulprits[0].Y], c2.Cells[aCulprits[1].Y] };
+                            if (!bCulprits.All(c => c.Candidates.ContainsAll(cand))
+                                || !bCulprits.Any(c => c.Candidates.Count == 2) || !bCulprits.Any(c => c.Candidates.Count > 2)) continue;
+                            // I added the second "Any" check for the case where you input a puzzle with two solutions
+                            // Found UR type 1
+                            var theOne = bCulprits.Single(c => c.Candidates.Count > 2);
+                            if (Puzzle.ChangeCandidates(new SPoint[] { theOne.Point }, cand))
+                            {
+                                var culprits = aCulprits.Union(bCulprits.Select(c => c.Point));
+                                Puzzle.Log("Unique Rectangle", culprits, cand);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         bool FindXYZWing(Region region)
@@ -220,7 +258,7 @@ namespace SudokuSolver.Core
                             {
                                 changed = true;
                                 var culprits = new SPoint[] { p2, p3, p2_2 };
-                                Puzzle.Log("XYZ-Wing", culprits, "{0}: {1}", culprits.Print(), allHave[0]);
+                                Puzzle.Log("XYZ-Wing", culprits, allHave);
                             }
                         }
                     }
@@ -260,7 +298,7 @@ namespace SudokuSolver.Core
                                 if (Puzzle.ChangeCandidates(common, cand))
                                 {
                                     var culprits = new SPoint[] { p1, p2, p3 };
-                                    Puzzle.Log("Y-Wing", culprits, "{0}: {1}", culprits.Print(), cand[0]);
+                                    Puzzle.Log("Y-Wing", culprits, cand);
                                     return true;
                                 }
                             }
@@ -284,8 +322,8 @@ namespace SudokuSolver.Core
         {
             if (loop == amt)
             {
-                SPoint[][] rowPoints = indexes.Select(i => Puzzle.Rows[i].GetPointsWithCandidate(cand)).ToArray(),
-                    colPoints = indexes.Select(i => Puzzle.Columns[i].GetPointsWithCandidate(cand)).ToArray();
+                SPoint[][] rowPoints = indexes.Select(i => Puzzle.Rows[i].GetPointsWithCandidates(cand)).ToArray(),
+                    colPoints = indexes.Select(i => Puzzle.Columns[i].GetPointsWithCandidates(cand)).ToArray();
 
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
@@ -295,7 +333,7 @@ namespace SudokuSolver.Core
                     var row2D = rowPoints.UniteAll();
                     if (Puzzle.ChangeCandidates(row2D.Select(p => Puzzle.Columns[p.X].Points).UniteAll().Except(row2D), new int[] { cand }))
                     {
-                        Puzzle.Log(fishStr[amt], row2D, "{0}: {1}", row2D.Print(), cand);
+                        Puzzle.Log(fishStr[amt], row2D, cand);
                         return true;
                     }
                 }
@@ -304,7 +342,7 @@ namespace SudokuSolver.Core
                     var col2D = colPoints.UniteAll();
                     if (Puzzle.ChangeCandidates(col2D.Select(p => Puzzle.Rows[p.Y].Points).UniteAll().Except(col2D), new int[] { cand }))
                     {
-                        Puzzle.Log(fishStr[amt], col2D, "{0}: {1}", col2D.Print(), cand);
+                        Puzzle.Log(fishStr[amt], col2D, cand);
                         return true;
                     }
                 }
@@ -322,7 +360,7 @@ namespace SudokuSolver.Core
 
         bool FindLocked(bool doRows, int rc, int value)
         {
-            var with = (doRows ? Puzzle.Rows : Puzzle.Columns)[rc].GetPointsWithCandidate(value);
+            var with = (doRows ? Puzzle.Rows : Puzzle.Columns)[rc].GetPointsWithCandidates(value);
 
             // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
             if (with.Count() == 3 || with.Count() == 2)
@@ -349,13 +387,13 @@ namespace SudokuSolver.Core
         {
             if (loop == amt)
             {
-                var points = cand.Select(c => region.GetPointsWithCandidate(c)).UniteAll().ToArray();
+                var points = cand.Select(c => region.GetPointsWithCandidates(c)).UniteAll().ToArray();
                 if (points.Length != amt // There aren't "amt" cells for our tuple to be in
                     || points.Select(p => Puzzle[p].Candidates).UniteAll().Count() == amt // We already know it's a tuple (might be faster to skip this check, idk)
                     || cand.Any(v => !points.Any(p => Puzzle[p].Candidates.Contains(v)))) return false; // If a number in our combo doesn't actually show up in any of our cells
                 if (Puzzle.ChangeCandidates(points, Enumerable.Range(1, 9).Except(cand)))
                 {
-                    Puzzle.Log("Hidden " + tupleStr[amt], points, "{0}: {1}", points.Print(), cand.Print());
+                    Puzzle.Log("Hidden " + tupleStr[amt], points, cand);
                     return true;
                 }
             }
@@ -384,7 +422,7 @@ namespace SudokuSolver.Core
                 {
                     if (Puzzle.ChangeCandidates(indexes.Select(i => Puzzle[region.Points[i]].GetCanSeePoints()).IntersectAll(), combo))
                     {
-                        Puzzle.Log("Naked " + tupleStr[amt], points, "{0}: {1}", points.Print(), combo.Print());
+                        Puzzle.Log("Naked " + tupleStr[amt], points, combo);
                         return true;
                     }
                 }

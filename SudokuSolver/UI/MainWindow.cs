@@ -93,7 +93,7 @@ namespace SudokuSolver
         {
             stopwatch.Stop();
             logList.DataSource = null; // If a new puzzle is used it glitches out for some reason unless I put this
-            solver.Puzzle.Log("Solver {0} the puzzle", ((bool)e.Result) ? "completed" : "failed");
+            solver.Puzzle.Log(string.Format("Solver {0} the puzzle", ((bool)e.Result) ? "completed" : "failed"));
             logList.DataSource = solver.Puzzle.Actions;
             logList.SelectedIndex = solver.Puzzle.Actions.Count - 1;
             logList.Select();

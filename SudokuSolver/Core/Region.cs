@@ -48,7 +48,7 @@ namespace SudokuSolver.Core
         public int[] GetRegion() => Cells.Select(c => c.Value).ToArray();
         public HashSet<int>[] GetCandidates() => Cells.Select(c => c.Candidates).ToArray();
 
-        public Cell[] GetCellsWithCandidate(int value) => Cells.Where(c => c.Candidates.Contains(value)).ToArray();
-        public SPoint[] GetPointsWithCandidate(int value) => GetCellsWithCandidate(value).Select(c => c.Point).ToArray();
+        public Cell[] GetCellsWithCandidates(params int[] values) => Cells.Where(c => c.Candidates.ContainsAll(values)).ToArray();
+        public SPoint[] GetPointsWithCandidates(params int[] values) => GetCellsWithCandidates(values).Select(c => c.Point).ToArray();
     }
 }
