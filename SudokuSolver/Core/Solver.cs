@@ -174,6 +174,9 @@ namespace SudokuSolver.Core
                 // Check for unique rectangles type 1 - http://hodoku.sourceforge.net/en/tech_ur.php#u1
                 if (FindUR1()) { changed = true; continue; }
 
+                // Check for unique rectangles type 2 - http://hodoku.sourceforge.net/en/tech_ur.php#u2
+                if (FindUR2()) { changed = true; continue; }
+
                 // Check for naked quads - http://hodoku.sourceforge.net/en/tech_naked.php#n4
                 for (int i = 0; i < 9; i++)
                 {
@@ -194,6 +197,40 @@ namespace SudokuSolver.Core
             } while (changed);
 
             e.Result = solved;
+        }
+
+        // I will condense the functions into fewer once I see how they all look
+        bool FindUR2()
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                var c1 = Puzzle.Columns[i];
+                for (int n = 1; n <= 9; n++)
+                {
+                    for (int n2 = n + 1; n2 <= 9; n2++)
+                    {
+                        var cand = new int[] { n, n2 };
+                        var aCulprits = c1.Cells.Where(c => c.Candidates.Count == 2 && c.Candidates.ContainsAll(cand)).Select(c => c.Point).ToArray();
+                        if (aCulprits.Length != 2) continue;
+                        for (int j = 0; j < 9; j++)
+                        {
+                            if (j == i) continue;
+                            var c2 = Puzzle.Columns[j];
+                            var bCulprits = new Cell[] { c2.Cells[aCulprits[0].Y], c2.Cells[aCulprits[1].Y] };
+                            if (!bCulprits.All(c => c.Candidates.ContainsAll(cand) && c.Candidates.Count == 3) || !bCulprits[0].Candidates.SetEquals(bCulprits[1].Candidates)) continue;
+                            // Found UR type 2
+                            var remove = bCulprits[0].Candidates.Except(cand).ToArray();
+                            if (Puzzle.ChangeCandidates(bCulprits[0].GetCanSeePoints().Intersect(bCulprits[1].GetCanSeePoints()), remove))
+                            {
+                                var culprits = aCulprits.Union(bCulprits.Select(c => c.Point));
+                                Puzzle.Log("Unique Rectangle", culprits, remove);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         bool FindUR1()
