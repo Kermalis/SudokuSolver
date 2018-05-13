@@ -189,269 +189,122 @@ namespace SudokuSolver.Core
                 }
 
                 // Check for unique rectangles - http://hodoku.sourceforge.net/en/tech_ur.php
-                if (FindUR1() || FindUR2() || FindUR3() || FindUR4() || FindUR5() || FindUR6()) { changed = true; continue; }
+                if (FindUniqueRectangles()) { changed = true; continue; }
 
             } while (changed);
 
             e.Result = solved;
         }
 
-        // I will condense the functions once I think about what to do with them
-        bool FindUR6()
+        bool FindUniqueRectangles()
         {
-            for (int i = 0; i < 9; i++)
+            for (int t = 1; t <= 6; t++) // Type
             {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
+                for (int x = 0; x < 9; x++)
                 {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
+                    var c1 = Puzzle.Columns[x];
+                    for (int x2 = x + 1; x2 < 9; x2++)
                     {
-                        for (int j2 = j + 1; j2 < 9; j2++)
+                        var c2 = Puzzle.Columns[x2];
+                        for (int y = 0; y < 9; y++)
                         {
-                            for (int n = 1; n <= 9; n++)
+                            for (int y2 = y + 1; y2 < 9; y2++)
                             {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
+                                for (int v = 1; v <= 9; v++)
                                 {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    if (l[2].Count() != 2 || l[3].Count() != 3) continue; // UR type 6
-                                    // UR type 6 rules
-                                    Cell[] two = l[2].ToArray(), three = l[3].ToArray();
-                                    if (three[0].Point.X == three[1].Point.X) continue;
-                                    int set = 0;
-                                    if (c1.GetCellsWithCandidates(n).Length == 2 && c2.GetCellsWithCandidates(n).Length == 2 // Check if "n" only appears in the UR
-                                        && Puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(n).Length == 2
-                                            && Puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(n).Length == 2)
-                                        set = n;
-                                    else if (c1.GetCellsWithCandidates(n2).Length == 2 && c2.GetCellsWithCandidates(n2).Length == 2
-                                        && Puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(n2).Length == 2
-                                            && Puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(n2).Length == 2)
-                                        set = n2;
-                                    else continue;
-                                    // Found UR type 6
-                                    two[0].Set(set);
-                                    two[1].Set(set);
-                                    Puzzle.Log("Unique Rectangle", a, cand);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        bool FindUR5()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
-                {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
-                    {
-                        for (int j2 = j + 1; j2 < 9; j2++)
-                        {
-                            for (int n = 1; n <= 9; n++)
-                            {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
-                                {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    if (l[2].Count() != 1 || l[3].Count() != 3) continue; // UR type 5
-                                    // UR type 5 rules
-                                    var three = l[3].ToArray();
-                                    if (!three[0].Candidates.SetEquals(three[1].Candidates) || !three[1].Candidates.SetEquals(three[2].Candidates)) continue;
-                                    // Found UR type 5
-                                    if (Puzzle.ChangeCandidates(three.Select(c => c.GetCanSeePoints()).IntersectAll(), three[0].Candidates.Except(cand)))
+                                    for (int v2 = v + 1; v2 <= 9; v2++)
                                     {
-                                        Puzzle.Log("Unique Rectangle", a, cand);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        bool FindUR4()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
-                {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
-                    {
-                        for (int j2 = j + 1; j2 < 9; j2++)
-                        {
-                            for (int n = 1; n <= 9; n++)
-                            {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
-                                {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    if (l[2].Count() != 2 || l[3].Count() != 1 || l[4].Count() != 1) continue; // UR type 4
-                                    // UR type 4 rules
-                                    var remove = new int[1];
-                                    Cell[] three = l[3].ToArray(), four = l[4].ToArray();
-                                    if (four[0].Block == three[0].Block)
-                                    {
-                                        if (Puzzle.Blocks[four[0].Block].GetCellsWithCandidates(n).Length == 2)
-                                            remove[0] = n2;
-                                        else if (Puzzle.Blocks[four[0].Block].GetCellsWithCandidates(n2).Length == 2)
-                                            remove[0] = n;
-                                    }
-                                    if (remove[0] != 0) // They share the same row/column but not the same block
-                                    {
-                                        if (three[0].Point.X == three[0].Point.X)
+                                        var cand = new int[] { v, v2 };
+                                        var cells = new Cell[] { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
+                                        if (cells.Any(c => !c.Candidates.ContainsAll(cand))) continue;
+
+                                        var l = cells.ToLookup(c => c.Candidates.Count);
+                                        var gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g).ToArray();
+
+                                        switch (t) // Check for candidate counts
                                         {
-                                            if (Puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(n).Length == 2)
-                                                remove[0] = n2;
-                                            else if (Puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(n2).Length == 2)
-                                                remove[0] = n;
+                                            case 1: if (l[2].Count() != 3 || gtTwo.Length != 1) continue; break;
+                                            case 2: case 6: if (l[2].Count() != 2 || l[3].Count() != 2) continue; break;
+                                            case 3: if (l[2].Count() != 2 || gtTwo.Length != 2) continue; break;
+                                            case 4: if (l[2].Count() != 2 || l[3].Count() != 1 || l[4].Count() != 1) continue; break;
+                                            case 5: if (l[2].Count() != 1 || l[3].Count() != 3) continue; break;
                                         }
-                                        else
+
+                                        Cell[] two = l[2].ToArray(), three = l[3].ToArray(), four = l[4].ToArray();
+                                        switch (t) // Check for extra rules
                                         {
-                                            if (Puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(n).Length == 2)
-                                                remove[0] = n2;
-                                            else if (Puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(n2).Length == 2)
-                                                remove[0] = n;
+                                            case 1:
+                                                if (gtTwo[0].Candidates.Count == 3) gtTwo[0].Set(gtTwo[0].Candidates.Single(c => !cand.Contains(c)));
+                                                else Puzzle.ChangeCandidates(gtTwo, cand);
+                                                break;
+                                            case 2:
+                                                if (!three[0].Candidates.SetEquals(three[1].Candidates)) continue;
+                                                if (!Puzzle.ChangeCandidates(three[0].GetCanSeePoints().Intersect(three[1].GetCanSeePoints()), three[0].Candidates.Except(cand))) continue;
+                                                break;
+                                            case 3:
+                                                if (gtTwo[0].Point.X != gtTwo[1].Point.X && gtTwo[0].Point.Y != gtTwo[1].Point.Y) continue; // Must be non-diagonal
+                                                var others = gtTwo[0].Candidates.Except(cand).Union(gtTwo[1].Candidates.Except(cand));
+                                                if (others.Count() > 4 || others.Count() < 2) continue;
+                                                IEnumerable<Cell> nSubset = ((gtTwo[0].Point.Y == gtTwo[1].Point.Y) ? // Same row
+                                                    Puzzle.Rows[gtTwo[0].Point.Y] : Puzzle.Columns[gtTwo[0].Point.X])
+                                                    .Cells.Where(c => c.Candidates.ContainsAny(others) && !c.Candidates.ContainsAny(Enumerable.Range(1, 9).Except(others)));
+                                                if (nSubset.Count() != others.Count() - 1) continue;
+                                                if (!Puzzle.ChangeCandidates(nSubset.Union(gtTwo).Select(c => c.GetCanSee()).IntersectAll(), others)) continue;
+                                                break;
+                                            case 4:
+                                                var remove = new int[1];
+                                                if (four[0].Block == three[0].Block)
+                                                {
+                                                    if (Puzzle.Blocks[four[0].Block].GetCellsWithCandidates(v).Length == 2)
+                                                        remove[0] = v2;
+                                                    else if (Puzzle.Blocks[four[0].Block].GetCellsWithCandidates(v2).Length == 2)
+                                                        remove[0] = v;
+                                                }
+                                                if (remove[0] != 0) // They share the same row/column but not the same block
+                                                {
+                                                    if (three[0].Point.X == three[0].Point.X)
+                                                    {
+                                                        if (Puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(v).Length == 2)
+                                                            remove[0] = v2;
+                                                        else if (Puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(v2).Length == 2)
+                                                            remove[0] = v;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (Puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(v).Length == 2)
+                                                            remove[0] = v2;
+                                                        else if (Puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(v2).Length == 2)
+                                                            remove[0] = v;
+                                                    }
+                                                }
+                                                else continue;
+                                                Puzzle.ChangeCandidates(cells.Except(l[2]), remove);
+                                                break;
+                                            case 5:
+                                                if (!three[0].Candidates.SetEquals(three[1].Candidates) || !three[1].Candidates.SetEquals(three[2].Candidates)) continue;
+                                                if (!Puzzle.ChangeCandidates(three.Select(c => c.GetCanSeePoints()).IntersectAll(), three[0].Candidates.Except(cand))) continue;
+                                                break;
+                                            case 6:
+                                                if (three[0].Point.X == three[1].Point.X) continue;
+                                                int set = 0;
+                                                if (c1.GetCellsWithCandidates(v).Length == 2 && c2.GetCellsWithCandidates(v).Length == 2 // Check if "v" only appears in the UR
+                                                    && Puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(v).Length == 2
+                                                        && Puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(v).Length == 2)
+                                                    set = v;
+                                                else if (c1.GetCellsWithCandidates(v2).Length == 2 && c2.GetCellsWithCandidates(v2).Length == 2
+                                                    && Puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(v2).Length == 2
+                                                        && Puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(v2).Length == 2)
+                                                    set = v2;
+                                                else continue;
+                                                two[0].Set(set);
+                                                two[1].Set(set);
+                                                break;
                                         }
-                                    }
-                                    else continue;
-                                    // Found UR type 4
-                                    Puzzle.ChangeCandidates(a.Except(l[2]), remove);
-                                    Puzzle.Log("Unique Rectangle", a, cand);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        bool FindUR3()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
-                {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
-                    {
-                        for (int j2 = j + 1; j2 < 9; j2++)
-                        {
-                            for (int n = 1; n <= 9; n++)
-                            {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
-                                {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    var gtTwo = l.Where(g => g.Key > 2).Select(g => g.Select(c => c)).UniteAll().ToArray();
-                                    if (l[2].Count() != 2 || gtTwo.Length != 2) continue; // UR type 3
-                                    // UR type 3 rules
-                                    if (gtTwo[0].Point.X != gtTwo[1].Point.X && gtTwo[0].Point.Y != gtTwo[1].Point.Y) continue; // Must be non-diagonal
-                                    var others = gtTwo[0].Candidates.Except(cand).Union(gtTwo[1].Candidates.Except(cand));
-                                    if (others.Count() > 4 || others.Count() < 2) continue;
-                                    IEnumerable<Cell> thing = ((gtTwo[0].Point.Y == gtTwo[1].Point.Y) ? // Same row
-                                        Puzzle.Rows[gtTwo[0].Point.Y] : Puzzle.Columns[gtTwo[0].Point.X])
-                                        .Cells.Where(c => c.Candidates.ContainsAny(others) && !c.Candidates.ContainsAny(Enumerable.Range(1, 9).Except(others)));
-                                    if (thing.Count() != others.Count() - 1) continue;
-                                    // Found UR type 3
-                                    if (Puzzle.ChangeCandidates(thing.Union(gtTwo).Select(c => c.GetCanSee()).IntersectAll(), others))
-                                    {
-                                        Puzzle.Log("Unique Rectangle", a, cand);
+
+                                        // Found UR
+                                        Puzzle.Log("Unique Rectangle", cells, cand);
                                         return true;
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        bool FindUR2()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
-                {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
-                    {
-                        for (int j2 = j + 1; j2 < 9; j2++)
-                        {
-                            for (int n = 1; n <= 9; n++)
-                            {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
-                                {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    if (l[2].Count() != 2 || l[3].Count() != 2) continue; // UR type 2
-                                    // UR type 2 rules
-                                    var three = l[3].ToArray();
-                                    if (!three[0].Candidates.SetEquals(three[1].Candidates)) continue;
-                                    // Found UR type 2
-                                    if (Puzzle.ChangeCandidates(three[0].GetCanSeePoints().Intersect(three[1].GetCanSeePoints()), three[0].Candidates.Except(cand)))
-                                    {
-                                        Puzzle.Log("Unique Rectangle", a, cand);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        bool FindUR1()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                var c1 = Puzzle.Columns[i];
-                for (int i2 = i + 1; i2 < 9; i2++)
-                {
-                    var c2 = Puzzle.Columns[i2];
-                    for (int j = 0; j < 9; j++)
-                    {
-                        for (int j2 = j + 1; j2 < 9; j2++)
-                        {
-                            for (int n = 1; n <= 9; n++)
-                            {
-                                for (int n2 = n + 1; n2 <= 9; n2++)
-                                {
-                                    var cand = new int[] { n, n2 };
-                                    var a = new Cell[] { c1.Cells[j], c1.Cells[j2], c2.Cells[j], c2.Cells[j2] };
-                                    if (a.Any(c => !c.Candidates.ContainsAll(cand))) continue;
-                                    var l = a.ToLookup(c => c.Candidates.Count);
-                                    var gtTwo = l.Where(g => g.Key > 2).Select(g => g.Select(c => c)).UniteAll().ToArray();
-                                    if (l[2].Count() != 3 || gtTwo.Length != 1) continue; // UR type 1
-                                    // Found UR type 1
-                                    if (gtTwo[0].Candidates.Count == 3) gtTwo[0].Set(gtTwo[0].Candidates.Single(c => !cand.Contains(c)));
-                                    else Puzzle.ChangeCandidates(gtTwo, cand);
-                                    Puzzle.Log("Unique Rectangle", a, cand);
-                                    return true;
                                 }
                             }
                         }
@@ -557,7 +410,7 @@ namespace SudokuSolver.Core
 
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
-
+                
                 if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
