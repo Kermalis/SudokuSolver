@@ -23,26 +23,33 @@ namespace SudokuSolver.Core
             return row;
         }
 
-        public static bool ContainsAll<T>(this IEnumerable<T> input, params T[] values)
+        public static bool ContainsAny<T>(this IEnumerable<T> source, IEnumerable<T> values)
         {
             foreach (T o in values)
-                if (!input.Contains(o))
+                if (source.Contains(o))
+                    return true;
+            return false;
+        }
+        public static bool ContainsAll<T>(this IEnumerable<T> source, IEnumerable<T> values)
+        {
+            foreach (T o in values)
+                if (!source.Contains(o))
                     return false;
             return true;
         }
-        public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> input)
+        public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> source)
         {
-            if (input.Count() == 0) return new T[0];
-            var inp = input.ToArray();
+            if (source.Count() == 0) return new T[0];
+            var inp = source.ToArray();
             IEnumerable<T> output = inp[0];
             for (int i = 1; i < inp.Length; i++)
                 output = output.Intersect(inp[i]);
             return output;
         }
-        public static IEnumerable<T> UniteAll<T>(this IEnumerable<IEnumerable<T>> input)
+        public static IEnumerable<T> UniteAll<T>(this IEnumerable<IEnumerable<T>> source)
         {
             IEnumerable<T> output = new T[0];
-            foreach (IEnumerable<T> i in input)
+            foreach (IEnumerable<T> i in source)
                 output = output.Union(i);
             return output;
         }
