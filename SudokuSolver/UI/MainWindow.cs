@@ -99,5 +99,7 @@ namespace SudokuSolver
             logList.Select();
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
         }
+
+        private void Exit(object sender, EventArgs e) => Environment.Exit(0);
     }
 }
