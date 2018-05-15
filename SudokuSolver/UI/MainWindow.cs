@@ -21,32 +21,29 @@ namespace SudokuSolver
             sudokuBoard.CellChanged += (cell) => ChangeState(true, true);
         }
 
-        private void LogList_SelectedIndexChanged(object sender, EventArgs e) => sudokuBoard.ReDraw(true, logList.SelectedIndex);
-        private void ChangeState(bool solveButtonState, bool saveState)
+        void LogList_SelectedIndexChanged(object sender, EventArgs e) => sudokuBoard.ReDraw(true, logList.SelectedIndex);
+        void ChangeState(bool solveButtonState, bool saveState)
         {
             solveButton.Enabled = solveButtonState;
             saveAsToolStripMenuItem.Enabled = saveState;
         }
 
-        private void ChangePuzzle(string name, bool buttonState)
+        void ChangePuzzle(string name, bool buttonState)
         {
             ChangeState(buttonState, false);
             puzzleLabel.Text = name + " Puzzle";
             statusLabel.Text = "";
-            logList.SelectedIndexChanged -= LogList_SelectedIndexChanged;
-            logList.DataSource = null;
-            logList.SelectedIndexChanged += LogList_SelectedIndexChanged;
+            logList.DataSource = Logger.Actions = new BindingList<string>();
             sudokuBoard.SetBoard(solver.Puzzle);
         }
-        private void NewPuzzle(object sender, EventArgs e)
+        void NewPuzzle(object sender, EventArgs e)
         {
             solver = new Solver(Utils.CreateJaggedArray<int[][]>(9, 9), true);
             ChangePuzzle("Custom", false);
-            logList.DataSource = solver.Puzzle.Actions;
-            solver.Puzzle.Log("Custom puzzle created");
+            Logger.Log("Custom puzzle created");
             MessageBox.Show("A custom puzzle has been created. Click cells to type in values.", Text);
         }
-        private void OpenPuzzle(object sender, EventArgs e)
+        void OpenPuzzle(object sender, EventArgs e)
         {
             var d = new OpenFileDialog
             {
@@ -61,7 +58,7 @@ namespace SudokuSolver
             else
                 MessageBox.Show("Invalid puzzle data.");
         }
-        private void SavePuzzle(object sender, EventArgs e)
+        void SavePuzzle(object sender, EventArgs e)
         {
             var d = new SaveFileDialog
             {
@@ -74,7 +71,7 @@ namespace SudokuSolver
             solver.Puzzle.Save(d.FileName);
             MessageBox.Show("Puzzle saved.", Text);
         }
-        private void SolvePuzzle(object sender, EventArgs e)
+        void SolvePuzzle(object sender, EventArgs e)
         {
             ChangeState(false, saveAsToolStripMenuItem.Enabled);
             if (solver.Puzzle.IsCustom) // This check goes here so the solver isn't slowed down. The solver on its own would not have to do this
@@ -89,17 +86,15 @@ namespace SudokuSolver
             stopwatch.Start();
             bw.RunWorkerAsync();
         }
-        private void SolverFinished(object sender, RunWorkerCompletedEventArgs e)
+        void SolverFinished(object sender, RunWorkerCompletedEventArgs e)
         {
             stopwatch.Stop();
-            logList.DataSource = null; // If a new puzzle is used it glitches out for some reason unless I put this
-            solver.Puzzle.Log(string.Format("Solver {0} the puzzle", ((bool)e.Result) ? "completed" : "failed"));
-            logList.DataSource = solver.Puzzle.Actions;
-            logList.SelectedIndex = solver.Puzzle.Actions.Count - 1;
-            logList.Select();
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
+            Logger.Log(string.Format("Solver {0} the puzzle", ((bool)e.Result) ? "completed" : "failed"));
+            logList.SelectedIndex = Logger.Actions.Count - 1;
+            logList.Select();
         }
 
-        private void Exit(object sender, EventArgs e) => Environment.Exit(0);
+        void Exit(object sender, EventArgs e) => Environment.Exit(0);
     }
 }

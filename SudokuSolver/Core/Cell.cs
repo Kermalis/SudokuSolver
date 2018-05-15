@@ -3,13 +3,13 @@ using System.Linq;
 
 namespace SudokuSolver.Core
 {
-    public class Snapshot
+    internal class Snapshot
     {
-        public readonly int Value;
-        public readonly int[] Candidates;
-        public readonly bool IsCulprit;
+        internal readonly int Value;
+        internal readonly int[] Candidates;
+        internal readonly bool IsCulprit;
 
-        public Snapshot(int value, HashSet<int> candidates, bool culprit)
+        internal Snapshot(int value, HashSet<int> candidates, bool culprit)
         {
             Value = value;
             Candidates = candidates.ToArray();
@@ -17,21 +17,21 @@ namespace SudokuSolver.Core
         }
     }
 
-    public class Cell
+    internal class Cell
     {
-        public int Value { get; private set; }
-        public HashSet<int> Candidates { get; private set; }
+        internal int Value { get; private set; }
+        internal HashSet<int> Candidates { get; private set; }
 
-        public int OriginalValue { get; private set; }
-        public readonly int Block;
-        public readonly SPoint Point;
+        internal int OriginalValue { get; private set; }
+        internal readonly int Block;
+        internal readonly SPoint Point;
 
         List<Snapshot> _snapshots;
-        public Snapshot[] Snapshots { get => _snapshots.ToArray(); }
+        internal Snapshot[] Snapshots { get => _snapshots.ToArray(); }
 
         Puzzle puzzle;
 
-        public Cell(Puzzle board, int value, SPoint point)
+        internal Cell(Puzzle board, int value, SPoint point)
         {
             puzzle = board;
             OriginalValue = Value = value;
@@ -41,7 +41,7 @@ namespace SudokuSolver.Core
             _snapshots = new List<Snapshot>();
         }
 
-        public void Set(int newVal, bool refreshOthers = false)
+        internal void Set(int newVal, bool refreshOthers = false)
         {
             int oldVal = Value;
             Value = newVal;
@@ -57,8 +57,8 @@ namespace SudokuSolver.Core
             }
             if (refreshOthers) puzzle.RefreshCandidates();
         }
-        public void ChangeOriginal(int value) => Set(OriginalValue = value, true);
-        public void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
+        internal void ChangeOriginal(int value) => Set(OriginalValue = value, true);
+        internal void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
 
         public override int GetHashCode() => Point.GetHashCode();
         public override bool Equals(object obj)

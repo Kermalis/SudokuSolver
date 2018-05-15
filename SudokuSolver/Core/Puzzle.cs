@@ -1,27 +1,24 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
 namespace SudokuSolver.Core
 {
-    public class Puzzle
+    internal class Puzzle
     {
-        public static Region[] Rows { get; private set; }
-        public static Region[] Columns { get; private set; }
-        public static Region[] Blocks { get; private set; }
-        public static Region[][] Regions { get; private set; }
+        internal static Region[] Rows { get; private set; }
+        internal static Region[] Columns { get; private set; }
+        internal static Region[] Blocks { get; private set; }
+        internal static Region[][] Regions { get; private set; }
 
-        public readonly bool IsCustom;
+        internal readonly bool IsCustom;
 
         Cell[][] board;
-        public readonly BindingList<string> Actions;
 
-        public Puzzle(int[][] inBoard, bool bCustom)
+        internal Puzzle(int[][] inBoard, bool bCustom)
         {
             board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
             IsCustom = bCustom;
-            Actions = new BindingList<string>();
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
                     board[x][y] = new Cell(this, inBoard[x][y], new SPoint(x, y));
@@ -34,30 +31,18 @@ namespace SudokuSolver.Core
             }
         }
 
-        public Cell this[int x, int y]
+        internal Cell this[int x, int y]
         {
             get => board[x][y];
         }
-        public Cell this[SPoint p]
+        internal Cell this[SPoint p]
         {
             get => board[p.X][p.Y];
         }
 
-        public void Log(string technique, IEnumerable<SPoint> culprits, params int[] candidates) => Log(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidates.Length == 1 ? candidates[0].ToString() : candidates.Print());
-        public void Log(string technique, IEnumerable<Cell> culprits, params int[] candidates) => Log(technique, culprits.Select(c => c.Point), candidates);
-        public void Log(string technique, IEnumerable<SPoint> culprits, string format, params object[] args) => Log(technique, culprits.Select(p => this[p]), format, args);
-        public void Log(string technique, IEnumerable<Cell> culprits, string format, params object[] args) => Log(string.Format($"{technique,-20}" + format, args), culprits.ToArray());
-        public void Log(string s, params Cell[] culprits)
-        {
-            for (int x = 0; x < 9; x++)
-                for (int y = 0; y < 9; y++)
-                    this[x, y].TakeSnapshot(culprits != null && culprits.Contains(this[x, y]));
-            Actions.Add(s);
-        }
-
         // Add/Remove the following candidates at the following locations
-        public bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> cand, bool remove = true) => ChangeCandidates(cells.Select(c => c.Point), cand, remove);
-        public bool ChangeCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand, bool remove = true)
+        internal bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> cand, bool remove = true) => ChangeCandidates(cells.Select(c => c.Point), cand, remove);
+        internal bool ChangeCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand, bool remove = true)
         {
             bool changed = false;
             foreach (SPoint p in points)
@@ -65,7 +50,7 @@ namespace SudokuSolver.Core
                     if (remove ? this[p].Candidates.Remove(v) : this[p].Candidates.Add(v)) changed = true;
             return changed;
         }
-        public void RefreshCandidates()
+        internal void RefreshCandidates()
         {
             for (int x = 0; x < 9; x++)
                 for (int y = 0; y < 9; y++)
@@ -76,7 +61,7 @@ namespace SudokuSolver.Core
                     if (this[x, y] != 0) this[x, y].Set(this[x, y]);
         }
 
-        public static bool Load(string fileName, out Solver solver)
+        internal static bool Load(string fileName, out Solver solver)
         {
             solver = null;
             string[] filelines = File.ReadAllLines(fileName);
@@ -94,7 +79,7 @@ namespace SudokuSolver.Core
             solver = new Solver(board, false);
             return true;
         }
-        public void Save(string fileName)
+        internal void Save(string fileName)
         {
             using (var file = new StreamWriter(fileName))
                 for (int x = 0; x < 9; x++)

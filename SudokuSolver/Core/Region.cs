@@ -3,19 +3,19 @@ using System.Linq;
 
 namespace SudokuSolver.Core
 {
-    public enum SudokuRegion
+    internal enum SudokuRegion
     {
         Row,
         Column,
         Block
     }
 
-    public class Region
+    internal class Region
     {
-        public readonly SPoint[] Points;
-        public readonly Cell[] Cells;
+        internal readonly SPoint[] Points;
+        internal readonly Cell[] Cells;
 
-        public Region(Puzzle puzzle, SudokuRegion region, int index)
+        internal Region(Puzzle puzzle, SudokuRegion region, int index)
         {
             switch (region)
             {
@@ -45,10 +45,10 @@ namespace SudokuSolver.Core
             Cells = Points.Select(p => puzzle[p]).ToArray();
         }
 
-        public int[] GetRegion() => Cells.Select(c => c.Value).ToArray();
-        public HashSet<int>[] GetCandidates() => Cells.Select(c => c.Candidates).ToArray();
+        internal int[] GetRegion() => Cells.Select(c => c.Value).ToArray();
+        internal HashSet<int>[] GetCandidates() => Cells.Select(c => c.Candidates).ToArray();
 
-        public Cell[] GetCellsWithCandidates(params int[] values) => Cells.Where(c => c.Candidates.ContainsAll(values)).ToArray();
-        public SPoint[] GetPointsWithCandidates(params int[] values) => GetCellsWithCandidates(values).Select(c => c.Point).ToArray();
+        internal Cell[] GetCellsWithCandidates(params int[] values) => Cells.Where(c => c.Candidates.ContainsAll(values)).ToArray();
+        internal SPoint[] GetPointsWithCandidates(params int[] values) => GetCellsWithCandidates(values).Select(c => c.Point).ToArray();
     }
 }

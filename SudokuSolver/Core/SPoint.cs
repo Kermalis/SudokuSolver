@@ -1,10 +1,10 @@
 ﻿namespace SudokuSolver.Core
 {
-    public class SPoint
+    internal class SPoint
     {
-        public readonly int X, Y;
+        internal readonly int X, Y;
 
-        public SPoint(int x, int y)
+        internal SPoint(int x, int y)
         {
             X = x;
             Y = y;
