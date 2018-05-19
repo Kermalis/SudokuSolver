@@ -162,9 +162,60 @@ namespace SudokuSolver.Core
 
         bool FindHiddenRectangles()
         {
+            for (int x = 0; x < 9; x++)
+            {
+                var c1 = Puzzle.Columns[x];
+                for (int x2 = x + 1; x2 < 9; x2++)
+                {
+                    var c2 = Puzzle.Columns[x2];
+                    for (int y = 0; y < 9; y++)
+                    {
+                        for (int y2 = y + 1; y2 < 9; y2++)
+                        {
+                            for (int v = 1; v <= 9; v++)
+                            {
+                                for (int v2 = v + 1; v2 <= 9; v2++)
+                                {
+                                    var cand = new int[] { v, v2 };
+                                    var cells = new Cell[] { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
+                                    if (cells.Any(c => !c.Candidates.ContainsAll(cand))) continue;
+
+                                    var l = cells.ToLookup(c => c.Candidates.Count);
+                                    var gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g).ToArray();
+                                    if (gtTwo.Length < 2 || gtTwo.Length > 3) continue;
+
+                                    bool changed = false;
+                                    foreach (Cell c in l[2])
+                                    {
+                                        int eks = c.Point.X == x ? x2 : x,
+                                            why = c.Point.Y == y ? y2 : y;
+                                        foreach (int i in cand)
+                                        {
+                                            if (Puzzle.Rows[why].GetCellsWithCandidates(i).Except(cells).Count() == 0 // "i" only appears in our UR
+                                                && Puzzle.Columns[eks].GetCellsWithCandidates(i).Except(cells).Count() == 0)
+                                            {
+                                                Cell diag = Puzzle[eks, why];
+                                                if (diag.Candidates.Count == 2)
+                                                    diag.Set(i);
+                                                else
+                                                    Puzzle.ChangeCandidates(new Cell[] { diag }, new int[] { i == v ? v2 : v });
+                                                changed = true;
+                                            }
+                                        }
+                                    }
+                                    if (changed) // Found HR
+                                    {
+                                        Logger.Log("Hidden Rectangle", cells, cand);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return false;
         }
-
         bool FindUniqueRectangles()
         {
             for (int t = 1; t <= 6; t++) // Type
@@ -332,7 +383,7 @@ namespace SudokuSolver.Core
                         SPoint p2 = points[j];
                         var inter = Puzzle[p1].Candidates.Intersect(Puzzle[p2].Candidates);
                         if (inter.Count() != 1) continue;
-                        
+
                         int other1 = Puzzle[p1].Candidates.Except(inter).ElementAt(0),
                             other2 = Puzzle[p2].Candidates.Except(inter).ElementAt(0);
 
