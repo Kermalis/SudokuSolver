@@ -18,9 +18,10 @@ namespace SudokuSolver.Core
         {
             Puzzle.RefreshCandidates();
             Logger.Log("Begin");
-            bool solved = true; // If this is true after a segment, the puzzle is solved and we can break
+            bool solved; // If this is true after a segment, the puzzle is solved and we can break
             do
             {
+                solved = true;
                 bool changed = false;
 
                 // Check for naked singles or a completed puzzle
