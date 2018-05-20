@@ -9,8 +9,8 @@ namespace SudokuSolver.Core
     {
         internal readonly Puzzle Puzzle;
 
-        string[] fishStr = new string[] { "", "", "X-Wing", "Swordfish", "Jellyfish" };
-        string[] tupleStr = new string[] { "", "single", "pair", "triple", "quadruple" };
+        string[] fishStr = { "", "", "X-Wing", "Swordfish", "Jellyfish" };
+        string[] tupleStr = { "", "single", "pair", "triple", "quadruple" };
 
         internal Solver(int[][] inBoard, bool bCustom) => Logger.Puzzle = Puzzle = new Puzzle(inBoard, bCustom);
 
@@ -56,7 +56,7 @@ namespace SudokuSolver.Core
                             var c = r[i].GetCellsWithCandidates(v);
                             if (c.Length == 1)
                             {
-                                c.ElementAt(0).Set(v);
+                                c[0].Set(v);
                                 Logger.Log("Hidden single", c, new int[] { v });
                                 changed = true;
                             }
@@ -154,12 +154,94 @@ namespace SudokuSolver.Core
 
                 // Check for hidden rectangles - http://hodoku.sourceforge.net/en/tech_ur.php#hr
                 if (FindHiddenRectangles()) continue;
+
+                // Check for avoidable rectangles - http://hodoku.sourceforge.net/en/tech_ur.php#ar
+                if (FindAvoidableRectangles()) continue;
                 break;
             } while (true);
 
             e.Result = solved;
         }
 
+        bool FindAvoidableRectangles()
+        {
+            for (int t = 1; t <= 2; t++) // Type
+            {
+                for (int x = 0; x < 9; x++)
+                {
+                    var c1 = Puzzle.Columns[x];
+                    for (int x2 = x + 1; x2 < 9; x2++)
+                    {
+                        var c2 = Puzzle.Columns[x2];
+                        for (int y = 0; y < 9; y++)
+                        {
+                            for (int y2 = y + 1; y2 < 9; y2++)
+                            {
+                                for (int v = 1; v <= 9; v++)
+                                {
+                                    for (int v2 = v + 1; v2 <= 9; v2++)
+                                    {
+                                        int[] cand = { v, v2 };
+                                        Cell[] cells = { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
+                                        if (cells.Any(c => c.OriginalValue != 0)) continue;
+
+                                        Cell[] alreadySet = cells.Where(c => c != 0).ToArray(),
+                                            notSet = cells.Except(alreadySet).ToArray();
+
+                                        switch (t)
+                                        {
+                                            case 1: if (alreadySet.Length != 3) continue; break;
+                                            case 2: if (alreadySet.Length != 2) continue; break;
+                                        }
+                                        bool no = true;
+                                        Cell[][] pairs = { new Cell[] { cells[0], cells[3] }, new Cell[] { cells[1], cells[2] } };
+                                        foreach (Cell[] pair in pairs)
+                                        {
+                                            foreach (int i in cand)
+                                            {
+                                                var otherPair = pairs.Single(carr => carr != pair);
+                                                int otherVal = cand.Single(ca => ca != i);
+                                                if (((pair[0].Value == i && pair[1].Value == 0 && pair[1].Candidates.Count == 2 && pair[1].Candidates.Contains(i))
+                                                    || (pair[1].Value == i && pair[0].Value == 0 && pair[0].Candidates.Count == 2 && pair[0].Candidates.Contains(i)))
+                                                    && otherPair.All(c => c.Value == otherVal || (c.Candidates.Count == 2 && c.Candidates.Contains(otherVal))))
+                                                    no = false;
+                                            }
+                                        }
+                                        if (no) continue;
+
+                                        bool changed = false;
+                                        switch (t)
+                                        {
+                                            case 1:
+                                                Cell cell = notSet[0];
+                                                if (cell.Candidates.Count == 2)
+                                                    cell.Set(cell.Candidates.Except(cand).ElementAt(0));
+                                                else
+                                                    Puzzle.ChangeCandidates(new Cell[] { cell }, cell.Candidates.Intersect(cand).ToArray());
+                                                changed = true;
+                                                break;
+                                            case 2:
+                                                int[] common = notSet.Select(c => c.Candidates.Except(cand)).IntersectAll().ToArray();
+                                                if (common.Length > 0
+                                                    && Puzzle.ChangeCandidates(notSet.Select(c => c.GetCanSee()).IntersectAll(), common))
+                                                    changed = true;
+                                                break;
+                                        }
+
+                                        if (changed)
+                                        {
+                                            Logger.Log("Avoidable rectangle", cells, cand);
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
         bool FindHiddenRectangles()
         {
             for (int x = 0; x < 9; x++)
@@ -176,8 +258,8 @@ namespace SudokuSolver.Core
                             {
                                 for (int v2 = v + 1; v2 <= 9; v2++)
                                 {
-                                    var cand = new int[] { v, v2 };
-                                    var cells = new Cell[] { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
+                                    int[] cand = { v, v2 };
+                                    Cell[] cells = { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
                                     if (cells.Any(c => !c.Candidates.ContainsAll(cand))) continue;
 
                                     var l = cells.ToLookup(c => c.Candidates.Count);
@@ -203,9 +285,9 @@ namespace SudokuSolver.Core
                                             }
                                         }
                                     }
-                                    if (changed) // Found HR
+                                    if (changed)
                                     {
-                                        Logger.Log("Hidden Rectangle", cells, cand);
+                                        Logger.Log("Hidden rectangle", cells, cand);
                                         return true;
                                     }
                                 }
@@ -234,23 +316,23 @@ namespace SudokuSolver.Core
                                 {
                                     for (int v2 = v + 1; v2 <= 9; v2++)
                                     {
-                                        var cand = new int[] { v, v2 };
-                                        var cells = new Cell[] { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
+                                        int[] cand = { v, v2 };
+                                        Cell[] cells = { c1.Cells[y], c1.Cells[y2], c2.Cells[y], c2.Cells[y2] };
                                         if (cells.Any(c => !c.Candidates.ContainsAll(cand))) continue;
 
                                         var l = cells.ToLookup(c => c.Candidates.Count);
-                                        var gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g).ToArray();
+                                        Cell[] gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g).ToArray(),
+                                            two = l[2].ToArray(), three = l[3].ToArray(), four = l[4].ToArray();
 
                                         switch (t) // Check for candidate counts
                                         {
-                                            case 1: if (l[2].Count() != 3 || gtTwo.Length != 1) continue; break;
-                                            case 2: case 6: if (l[2].Count() != 2 || l[3].Count() != 2) continue; break;
-                                            case 3: if (l[2].Count() != 2 || gtTwo.Length != 2) continue; break;
-                                            case 4: if (l[2].Count() != 2 || l[3].Count() != 1 || l[4].Count() != 1) continue; break;
-                                            case 5: if (l[2].Count() != 1 || l[3].Count() != 3) continue; break;
+                                            case 1: if (two.Length != 3 || gtTwo.Length != 1) continue; break;
+                                            case 2: case 6: if (two.Length != 2 || three.Length != 2) continue; break;
+                                            case 3: if (two.Length != 2 || gtTwo.Length != 2) continue; break;
+                                            case 4: if (two.Length != 2 || three.Length != 1 || four.Length != 1) continue; break;
+                                            case 5: if (two.Length != 1 || three.Length != 3) continue; break;
                                         }
 
-                                        Cell[] two = l[2].ToArray(), three = l[3].ToArray(), four = l[4].ToArray();
                                         switch (t) // Check for extra rules
                                         {
                                             case 1:
@@ -321,8 +403,7 @@ namespace SudokuSolver.Core
                                                 break;
                                         }
 
-                                        // Found UR
-                                        Logger.Log("Unique Rectangle", cells, cand);
+                                        Logger.Log("Unique rectangle", cells, cand);
                                         return true;
                                     }
                                 }
@@ -359,9 +440,8 @@ namespace SudokuSolver.Core
                             var allHave = Puzzle[p2].Candidates.Intersect(Puzzle[p3].Candidates).Intersect(Puzzle[p2_2].Candidates); // Will be 1 Length
                             if (Puzzle.ChangeCandidates(allSee, allHave))
                             {
+                                Logger.Log("XYZ-Wing", new SPoint[] { p2, p3, p2_2 }, allHave);
                                 changed = true;
-                                var culprits = new SPoint[] { p2, p3, p2_2 };
-                                Logger.Log("XYZ-Wing", culprits, allHave);
                             }
                         }
                     }
@@ -387,7 +467,7 @@ namespace SudokuSolver.Core
                         int other1 = Puzzle[p1].Candidates.Except(inter).ElementAt(0),
                             other2 = Puzzle[p2].Candidates.Except(inter).ElementAt(0);
 
-                        var a = new SPoint[] { p1, p2 };
+                        SPoint[] a = { p1, p2 };
                         foreach (SPoint point in a)
                         {
                             var p3a = Puzzle[point].GetCanSeePoints().Except(points).Where(p => Puzzle[p].Candidates.Count == 2 && Puzzle[p].Candidates.Intersect(new int[] { other1, other2 }).Count() == 2);
@@ -399,8 +479,7 @@ namespace SudokuSolver.Core
                                 var cand = Puzzle[pOther].Candidates.Intersect(Puzzle[p3].Candidates); // Will just be 1 candidate
                                 if (Puzzle.ChangeCandidates(common, cand))
                                 {
-                                    var culprits = new SPoint[] { p1, p2, p3 };
-                                    Logger.Log("Y-Wing", culprits, cand);
+                                    Logger.Log("Y-Wing", new SPoint[] { p1, p2, p3 }, cand);
                                     return true;
                                 }
                             }
@@ -433,7 +512,7 @@ namespace SudokuSolver.Core
                 IEnumerable<int> rowLengths = rowPoints.Select(parr => parr.Length),
                     colLengths = colPoints.Select(parr => parr.Length);
 
-                var c = new int[] { cand };
+                int[] c = { cand };
                 if (rowLengths.Max() == amt && rowLengths.Min() > 0 && rowPoints.Select(parr => parr.Select(p => p.X)).UniteAll().Count() <= amt)
                 {
                     var row2D = rowPoints.UniteAll();
