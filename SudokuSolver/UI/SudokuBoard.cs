@@ -1,27 +1,27 @@
-﻿using SudokuSolver.Core;
+﻿using Kermalis.SudokuSolver.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace SudokuSolver.UI
+namespace Kermalis.SudokuSolver.UI
 {
-    public class SudokuBoard : UserControl
+    class SudokuBoard : UserControl
     {
         IContainer components = null;
-        readonly int d = 20;
+        const int spaceBeforeGrid = 20;
         readonly Brush changedText = Brushes.DodgerBlue, candidateText = Brushes.Crimson,
             culpritChangedHighlight = Brushes.Plum, culpritHighlight = Brushes.PaleTurquoise, changedHighlight = Brushes.PeachPuff;
 
-        internal delegate void CellChangedEventHandler(Cell cell);
-        internal event CellChangedEventHandler CellChanged;
-        SPoint selected = null;
+        public delegate void CellChangedEventHandler(Cell cell);
+        public event CellChangedEventHandler CellChanged;
+        Cell selectedCell = null;
 
-        Puzzle board;
+        Puzzle puzzle;
 
-        bool bCandidates = false;
-        int snap = -1;
+        bool showCandidates = false;
+        int snapshotIndex = -1;
 
         protected override void Dispose(bool disposing)
         {
@@ -37,7 +37,7 @@ namespace SudokuSolver.UI
             AutoScaleMode = AutoScaleMode.Font;
             DoubleBuffered = true;
             Name = "SudokuBoard";
-            Size = new Size(450 + d, 450 + d);
+            Size = new Size(450 + spaceBeforeGrid, 450 + spaceBeforeGrid);
             Paint += SudokuBoard_Paint;
             MouseMove += SudokuBoard_MouseMove;
             MouseClick += SudokuBoard_Click;
@@ -46,104 +46,137 @@ namespace SudokuSolver.UI
             Resize += SudokuBoard_Resize;
             ResumeLayout(false);
         }
-        internal SudokuBoard() => InitializeComponent();
+        public SudokuBoard()
+        {
+            InitializeComponent();
+        }
 
         void SudokuBoard_Paint(object sender, PaintEventArgs e)
         {
             Font f = base.Font, fMini = new Font(f.FontFamily, f.Size / 1.75f);
-            float rWidth = Width - d, rHeight = Height - d;
+            float rWidth = Width - spaceBeforeGrid, rHeight = Height - spaceBeforeGrid;
 
-            e.Graphics.DrawRectangle(Pens.Black, d, d, rWidth - 1, rHeight - 1);
+            e.Graphics.DrawRectangle(Pens.Black, spaceBeforeGrid, spaceBeforeGrid, rWidth - 1, rHeight - 1);
 
-            float w = (rWidth / 3f), h = (rHeight / 3f);
+            float w = rWidth / 3f, h = rHeight / 3f;
             bool b = true;
             for (int x = 0; x < 3; x++)
             {
                 for (int y = 0; y < 3; y++)
                 {
-                    var rect = new Rectangle((int)(w * x + d + 1), (int)(h * y + d + 1), (int)(w - 2), (int)(h - 2));
+                    var rect = new Rectangle((int)(w * x + spaceBeforeGrid + 1), (int)(h * y + spaceBeforeGrid + 1), (int)(w - 2), (int)(h - 2));
                     e.Graphics.FillRectangle((b = !b) ? Brushes.AliceBlue : Brushes.GhostWhite, rect);
                     e.Graphics.DrawRectangle(Pens.Black, rect);
                 }
             }
 
-            w = (rWidth / 9f); h = (rHeight / 9f);
+            w = rWidth / 9f;
+            h = rHeight / 9f;
             for (int x = 0; x < 9; x++)
             {
                 float xoff = w * x;
-                e.Graphics.DrawString((x + 1).ToString(), fMini, Brushes.Black, xoff + w / 1.3f, 0);
-                e.Graphics.DrawString(SPoint.RowL(x), fMini, Brushes.Black, 0, h * x + h / 1.4f);
+                e.Graphics.DrawString(SPoint.ColumnLetter(x), fMini, Brushes.Black, xoff + w / 1.3f, 0);
+                e.Graphics.DrawString(SPoint.RowLetter(x), fMini, Brushes.Black, 0, h * x + h / 1.4f);
                 for (int y = 0; y < 9; y++)
                 {
                     float yoff = h * y;
-                    e.Graphics.DrawRectangle(Pens.Black, xoff + d, yoff + d, w, h);
-                    if (board == null) continue;
-
-                    int val = board[x, y];
-                    IEnumerable<int> cand = board[x, y].Candidates;
-
-                    if (snap >= 0 && snap < board[x, y].Snapshots.Length)
+                    e.Graphics.DrawRectangle(Pens.Black, xoff + spaceBeforeGrid, yoff + spaceBeforeGrid, w, h);
+                    if (puzzle == null)
                     {
-                        Snapshot s = board[x, y].Snapshots[snap];
-                        val = s.Value;
-                        cand = s.Candidates;
-                        int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
-                            exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
-                        var rect = new RectangleF(xoff + d + 1 + xxoff, yoff + d + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
-                        bool changed = snap - 1 >= 0 && !new HashSet<int>(s.Candidates).SetEquals(board[x, y].Snapshots[snap - 1].Candidates);
-                        if (s.IsCulprit && changed)
-                            e.Graphics.FillRectangle(culpritChangedHighlight, rect);
-                        else if (s.IsCulprit)
-                            e.Graphics.FillRectangle(culpritHighlight, rect);
-                        else if (changed)
-                            e.Graphics.FillRectangle(changedHighlight, rect);
+                        continue;
                     }
 
-                    var point = new PointF(xoff + f.Size / 1.5f + d, yoff + f.Size / 2.25f + d);
-                    if (selected != null && selected.X == x && selected.Y == y)
+                    int val = puzzle[x, y].Value;
+                    IEnumerable<int> candidates = puzzle[x, y].Candidates;
+
+                    if (snapshotIndex >= 0 && snapshotIndex < puzzle[x, y].Snapshots.Count)
+                    {
+                        CellSnapshot s = puzzle[x, y].Snapshots[snapshotIndex];
+                        val = s.Value;
+                        candidates = s.Candidates;
+                        int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0, // MATH
+                            exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
+                        var rect = new RectangleF(xoff + spaceBeforeGrid + 1 + xxoff, yoff + spaceBeforeGrid + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
+                        bool changed = snapshotIndex - 1 >= 0 && !new HashSet<int>(s.Candidates).SetEquals(puzzle[x, y].Snapshots[snapshotIndex - 1].Candidates);
+                        if (s.IsCulprit && changed)
+                        {
+                            e.Graphics.FillRectangle(culpritChangedHighlight, rect);
+                        }
+                        else if (s.IsCulprit)
+                        {
+                            e.Graphics.FillRectangle(culpritHighlight, rect);
+                        }
+                        else if (changed)
+                        {
+                            e.Graphics.FillRectangle(changedHighlight, rect);
+                        }
+                    }
+
+                    var point = new PointF(xoff + f.Size / 1.5f + spaceBeforeGrid, yoff + f.Size / 2.25f + spaceBeforeGrid);
+                    if (selectedCell != null && selectedCell.Point.X == x && selectedCell.Point.Y == y)
+                    {
                         e.Graphics.DrawString("_", f, Brushes.Crimson, point);
+                    }
                     if (val != 0)
-                        e.Graphics.DrawString(val.ToString(), f, val == board[x, y].OriginalValue ? Brushes.Black : changedText, point);
-                    else if (bCandidates)
-                        foreach (int v in cand)
-                            e.Graphics.DrawString(v.ToString(), fMini, candidateText, xoff + fMini.Size / 4 + (((v - 1) % 3) * (w / 3)) + d, yoff + (((v - 1) / 3) * (h / 3)) + d);
+                    {
+                        e.Graphics.DrawString(val.ToString(), f, val == puzzle[x, y].OriginalValue ? Brushes.Black : changedText, point);
+                    }
+                    else if (showCandidates)
+                    {
+                        foreach (int c in candidates)
+                        {
+                            e.Graphics.DrawString(c.ToString(), fMini, candidateText, xoff + fMini.Size / 4 + (((c - 1) % 3) * (w / 3)) + spaceBeforeGrid, yoff + (((c - 1) / 3) * (h / 3)) + spaceBeforeGrid);
+                        }
+                    }
                 }
             }
         }
 
-        SPoint GetCellFromPosition(Point location) => (board == null || !board.IsCustom || location.X < d || location.Y < d) ? null : new SPoint((location.X - d) / ((Width - d) / 9), (location.Y - d) / ((Height - d) / 9));
+        Cell GetCellFromMouseLocation(Point location)
+        {
+            return (puzzle == null || !puzzle.IsCustom || location.X < spaceBeforeGrid || location.Y < spaceBeforeGrid) ? null : puzzle[(location.X - spaceBeforeGrid) / ((Width - spaceBeforeGrid) / 9), (location.Y - spaceBeforeGrid) / ((Height - spaceBeforeGrid) / 9)];
+        }
 
-        void SudokuBoard_MouseMove(object sender, MouseEventArgs e) => Cursor = GetCellFromPosition(e.Location) == null ? Cursors.Default : Cursors.Hand;
+        void SudokuBoard_MouseMove(object sender, MouseEventArgs e)
+        {
+            Cursor = GetCellFromMouseLocation(e.Location) == null ? Cursors.Default : Cursors.Hand;
+        }
         void SudokuBoard_Click(object sender, MouseEventArgs e)
         {
-            selected = GetCellFromPosition(e.Location);
+            selectedCell = GetCellFromMouseLocation(e.Location);
             ReDraw(false);
         }
         void SudokuBoard_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (selected == null) return;
-
-            if (e != null && ((e.KeyChar == 48 && board[selected] != 0) || (e.KeyChar > 48 && e.KeyChar <= 57)))
+            if (selectedCell == null)
             {
-                board[selected].ChangeOriginal(e.KeyChar - 48);
-                Logger.Log("Changed cell", new Cell[] { board[selected] }, board[selected].ToString());
-                CellChanged?.Invoke(board[selected]);
+                return;
             }
-            selected = null;
+
+            if (e != null && ((e.KeyChar == 48 && selectedCell.Value != 0) || (e.KeyChar > 48 && e.KeyChar <= 57)))
+            {
+                selectedCell.ChangeOriginalValue(e.KeyChar - 48);
+                puzzle.LogAction("Changed cell", new Cell[] { selectedCell }, selectedCell.ToString());
+                CellChanged?.Invoke(selectedCell);
+            }
+            selectedCell = null;
             ReDraw(false);
         }
 
-        void SudokuBoard_Resize(object sender, EventArgs e) => ReDraw(bCandidates);
-        internal void ReDraw(bool showCandidates, int snapshot = -1)
+        void SudokuBoard_Resize(object sender, EventArgs e)
         {
-            bCandidates = showCandidates;
-            snap = snapshot;
+            ReDraw(showCandidates);
+        }
+        public void ReDraw(bool showCandidates, int snapshot = -1)
+        {
+            this.showCandidates = showCandidates;
+            snapshotIndex = snapshot;
             Invalidate();
         }
 
-        internal void SetBoard(Puzzle newBoard)
+        public void SetBoard(Puzzle newBoard)
         {
-            board = newBoard;
+            puzzle = newBoard;
             ReDraw(false);
         }
     }

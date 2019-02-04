@@ -1,94 +1,185 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
-namespace SudokuSolver.Core
+namespace Kermalis.SudokuSolver.Core
 {
-    internal class Puzzle
+    class Puzzle
     {
-        internal static Region[] Rows { get; private set; }
-        internal static Region[] Columns { get; private set; }
-        internal static Region[] Blocks { get; private set; }
-        internal static Region[][] Regions { get; private set; }
+        public readonly ReadOnlyCollection<Region> Rows;
+        public readonly ReadOnlyCollection<Region> Columns;
+        public readonly ReadOnlyCollection<Region> Blocks;
+        public readonly ReadOnlyCollection<ReadOnlyCollection<Region>> Regions;
 
-        internal readonly bool IsCustom;
+        public readonly BindingList<string> Actions = new BindingList<string>();
+        public readonly bool IsCustom;
+        readonly Cell[][] board;
 
-        Cell[][] board;
-
-        internal Puzzle(int[][] inBoard, bool bCustom)
+        public Puzzle(int[][] board, bool isCustom)
         {
-            board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
-            IsCustom = bCustom;
+            IsCustom = isCustom;
+            this.board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
             for (int x = 0; x < 9; x++)
+            {
                 for (int y = 0; y < 9; y++)
-                    board[x][y] = new Cell(this, inBoard[x][y], new SPoint(x, y));
-            Regions = new Region[][] { Rows = new Region[9], Columns = new Region[9], Blocks = new Region[9] };
+                {
+                    this.board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
+                }
+            }
+            Region[] rows = new Region[9],
+                columns = new Region[9],
+                blocks = new Region[9];
             for (int i = 0; i < 9; i++)
             {
-                Rows[i] = new Region(this, SudokuRegion.Row, i);
-                Columns[i] = new Region(this, SudokuRegion.Column, i);
-                Blocks[i] = new Region(this, SudokuRegion.Block, i);
+                Cell[] cells;
+                int c;
+
+                cells = new Cell[9];
+                for (c = 0; c < 9; c++)
+                {
+                    cells[c] = this.board[c][i];
+                }
+                rows[i] = new Region(cells);
+
+                cells = new Cell[9];
+                for (c = 0; c < 9; c++)
+                {
+                    cells[c] = this.board[i][c];
+                }
+                columns[i] = new Region(cells);
+
+                cells = new Cell[9];
+                c = 0;
+                int ix = i % 3 * 3,
+                    iy = i / 3 * 3;
+                for (int x = ix; x < ix + 3; x++)
+                {
+                    for (int y = iy; y < iy + 3; y++)
+                    {
+                        cells[c++] = this.board[x][y];
+                    }
+                }
+                blocks[i] = new Region(cells);
             }
+            Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new ReadOnlyCollection<Region>[]
+            {
+                Rows = new ReadOnlyCollection<Region>(rows),
+                Columns = new ReadOnlyCollection<Region>(columns),
+                Blocks = new ReadOnlyCollection<Region>(blocks)
+            });
         }
 
-        internal Cell this[int x, int y]
+        public Cell this[int x, int y]
         {
             get => board[x][y];
         }
-        internal Cell this[SPoint p]
-        {
-            get => board[p.X][p.Y];
-        }
 
         // Add/Remove the following candidates at the following locations
-        internal bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> cand, bool remove = true) => ChangeCandidates(cells.Select(c => c.Point), cand, remove);
-        internal bool ChangeCandidates(IEnumerable<SPoint> points, IEnumerable<int> cand, bool remove = true)
+        public bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates, bool remove = true)
         {
             bool changed = false;
-            foreach (SPoint p in points)
-                foreach (int v in cand)
-                    if (remove ? this[p].Candidates.Remove(v) : this[p].Candidates.Add(v)) changed = true;
+            foreach (Cell cell in cells)
+            {
+                foreach (int value in candidates)
+                {
+                    if (remove ? cell.Candidates.Remove(value) : cell.Candidates.Add(value))
+                    {
+                        changed = true;
+                    }
+                }
+            }
             return changed;
         }
-        internal void RefreshCandidates()
+        public void RefreshCandidates()
         {
             for (int x = 0; x < 9; x++)
+            {
                 for (int y = 0; y < 9; y++)
-                    foreach (var i in Enumerable.Range(1, 9).Except(this[x, y].Candidates))
-                        this[x, y].Candidates.Add(i);
+                {
+                    Cell cell = this[x, y];
+                    foreach (int i in Utils.OneToNine)
+                    {
+                        cell.Candidates.Add(i);
+                    }
+                }
+            }
             for (int x = 0; x < 9; x++)
+            {
                 for (int y = 0; y < 9; y++)
-                    if (this[x, y] != 0) this[x, y].Set(this[x, y]);
+                {
+                    Cell cell = this[x, y];
+                    if (cell.Value != 0)
+                    {
+                        cell.Set(cell.Value);
+                    }
+                }
+            }
         }
 
-        internal static bool Load(string fileName, out Solver solver)
+        public static Puzzle Load(string fileName)
         {
-            solver = null;
-            string[] filelines = File.ReadAllLines(fileName);
-            if (filelines.Length != 9) return false;
-            var board = Utils.CreateJaggedArray<int[][]>(9, 9);
+            string[] fileLines = File.ReadAllLines(fileName);
+            if (fileLines.Length != 9)
+            {
+                throw new InvalidDataException("Puzzle must have 9 rows.");
+            }
+            int[][] board = Utils.CreateJaggedArray<int[][]>(9, 9);
             for (int i = 0; i < 9; i++)
             {
-                string line = filelines[i];
-                if (line.Length != 9) return false;
+                string line = fileLines[i];
+                if (line.Length != 9)
+                {
+                    throw new InvalidDataException($"Row {i} must have 9 values.");
+                }
                 for (int j = 0; j < 9; j++)
-                    if (byte.TryParse(line[j].ToString(), out byte value)) // Anything can represent 0
+                {
+                    if (int.TryParse(line[j].ToString(), out int value)) // Anything can represent 0
+                    {
                         board[j][i] = value;
+                    }
+                }
             }
 
-            solver = new Solver(board, false);
-            return true;
+            return new Puzzle(board, false);
         }
-        internal void Save(string fileName)
+        public void Save(string fileName)
         {
             using (var file = new StreamWriter(fileName))
+            {
                 for (int x = 0; x < 9; x++)
                 {
                     string line = "";
                     for (int y = 0; y < 9; y++)
-                        line += this[y, x].OriginalValue == 0 ? "-" : this[y, x].OriginalValue.ToString();
+                    {
+                        Cell cell = this[y, x];
+                        line += cell.OriginalValue == 0 ? "-" : cell.OriginalValue.ToString();
+                    }
                     file.WriteLine(line);
                 }
+            }
+        }
+
+        public void LogAction(string technique, IEnumerable<Cell> culprits, IEnumerable<int> candidates)
+        {
+            LogAction(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
+        }
+        public void LogAction(string technique, IEnumerable<Cell> culprits, string format, params object[] args)
+        {
+            LogAction(string.Format(string.Format("{0,-20}", technique) + format, args), culprits);
+        }
+        public void LogAction(string action, IEnumerable<Cell> culprits = null)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = this[x, y];
+                    cell.AddSnapshot(culprits != null && culprits.Contains(cell));
+                }
+            }
+            Actions.Add(action);
         }
     }
 }

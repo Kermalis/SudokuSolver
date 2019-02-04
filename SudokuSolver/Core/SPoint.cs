@@ -1,25 +1,38 @@
-﻿namespace SudokuSolver.Core
+﻿namespace Kermalis.SudokuSolver.Core
 {
-    internal class SPoint
+    class SPoint
     {
-        internal readonly int X, Y;
+        public readonly int X, Y;
 
-        internal SPoint(int x, int y)
+        public SPoint(int x, int y)
         {
             X = x;
             Y = y;
         }
 
-        public static implicit operator SPoint(System.Drawing.Point p) => new SPoint(p.X, p.Y);
-
         public override bool Equals(object obj)
         {
             if (obj is SPoint other)
+            {
                 return other.X == X && other.Y == Y;
+            }
             return false;
         }
-        public override int GetHashCode() => X.GetHashCode() + Y.GetHashCode();
-        public static string RowL(int r) => ((char)(r + 65)).ToString();
-        public override string ToString() => RowL(Y) + (X + 1).ToString();
+        public override int GetHashCode()
+        {
+            return unchecked(X ^ Y);
+        }
+        public static string RowLetter(int row)
+        {
+            return ((char)(row + 65)).ToString();
+        }
+        public static string ColumnLetter(int column)
+        {
+            return (column + 1).ToString();
+        }
+        public override string ToString()
+        {
+            return RowLetter(Y) + ColumnLetter(X);
+        }
     }
 }

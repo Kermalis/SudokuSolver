@@ -1,13 +1,11 @@
-﻿using System;
+﻿using Kermalis.SudokuSolver.UI;
+using System;
 using System.Windows.Forms;
 
-namespace SudokuSolver
+namespace Kermalis.SudokuSolver
 {
     static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {

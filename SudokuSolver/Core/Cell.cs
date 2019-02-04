@@ -1,91 +1,111 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 
-namespace SudokuSolver.Core
+namespace Kermalis.SudokuSolver.Core
 {
-    internal class Snapshot
+    class CellSnapshot
     {
-        internal readonly int Value;
-        internal readonly int[] Candidates;
-        internal readonly bool IsCulprit;
+        public readonly int Value;
+        public readonly ReadOnlyCollection<int> Candidates;
+        public readonly bool IsCulprit;
 
-        internal Snapshot(int value, HashSet<int> candidates, bool culprit)
+        public CellSnapshot(int value, HashSet<int> candidates, bool isCulprit)
         {
             Value = value;
-            Candidates = candidates.ToArray();
-            IsCulprit = culprit;
+            Candidates = new ReadOnlyCollection<int>(candidates.ToArray());
+            IsCulprit = isCulprit;
         }
     }
 
-    internal class Cell
+    [DebuggerDisplay("{DebugString()}", Name = "{ToString()}")]
+    class Cell
     {
-        internal int Value { get; private set; }
-        internal HashSet<int> Candidates { get; private set; }
+        public int Value { get; private set; }
+        public readonly HashSet<int> Candidates = new HashSet<int>(Utils.OneToNine);
 
-        internal int OriginalValue { get; private set; }
-        internal readonly int Block;
-        internal readonly SPoint Point;
+        public int OriginalValue { get; private set; }
+        public readonly int BlockIndex;
+        public readonly SPoint Point;
 
-        List<Snapshot> _snapshots;
-        internal Snapshot[] Snapshots { get => _snapshots.ToArray(); }
+        public readonly List<CellSnapshot> Snapshots = new List<CellSnapshot>();
 
-        Puzzle puzzle;
+        readonly Puzzle puzzle;
 
-        internal Cell(Puzzle board, int value, SPoint point)
+        public Cell(Puzzle puzzle, int value, SPoint point)
         {
-            puzzle = board;
+            this.puzzle = puzzle;
             OriginalValue = Value = value;
             Point = point;
-            Block = (point.X / 3) + (3 * (point.Y / 3));
-            Candidates = new HashSet<int>(Enumerable.Range(1, 9));
-            _snapshots = new List<Snapshot>();
+            BlockIndex = (point.X / 3) + (3 * (point.Y / 3));
         }
 
-        internal void Set(int newVal, bool refreshOthers = false)
+        public void Set(int newValue, bool refreshOtherCellCandidates = false)
         {
-            int oldVal = Value;
-            Value = newVal;
-            if (newVal == 0)
+            int oldValue = Value;
+            Value = newValue;
+            if (newValue == 0)
             {
-                Candidates = new HashSet<int>(Enumerable.Range(1, 9));
-                puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { oldVal }, false);
+                foreach (int i in Utils.OneToNine)
+                {
+                    Candidates.Add(i);
+                }
+                puzzle.ChangeCandidates(GetCellsVisible(), new[] { oldValue }, false);
             }
             else
             {
                 Candidates.Clear();
-                puzzle.ChangeCandidates(GetCanSeePoints(), new int[] { newVal });
+                puzzle.ChangeCandidates(GetCellsVisible(), new[] { newValue });
             }
-            if (refreshOthers) puzzle.RefreshCandidates();
+            if (refreshOtherCellCandidates)
+            {
+                puzzle.RefreshCandidates();
+            }
         }
-        internal void ChangeOriginal(int value) => Set(OriginalValue = value, true);
-        internal void TakeSnapshot(bool culprit) => _snapshots.Add(new Snapshot(Value, Candidates, culprit));
+        public void ChangeOriginalValue(int value)
+        {
+            Set(OriginalValue = value, true);
+        }
+        public void AddSnapshot(bool isCulprit)
+        {
+            Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
+        }
 
-        public override int GetHashCode() => Point.GetHashCode();
+        public override int GetHashCode()
+        {
+            return Point.GetHashCode();
+        }
         public override bool Equals(object obj)
         {
             if (obj is Cell other)
-                return other.Value == Value && other.Point.Equals(Point);
+            {
+                return other.Point.Equals(Point);
+            }
             return false;
         }
         public override string ToString()
         {
+            return Point.ToString();
+        }
+        public string DebugString()
+        {
             string s = Point.ToString() + " ";
             if (Value == 0)
+            {
                 s += "has candidates: " + Candidates.Print();
+            }
             else
+            {
                 s += "- " + Value.ToString();
+            }
             return s;
         }
 
-        public static implicit operator int(Cell c) => c.Value;
-
-        public static bool operator ==(Cell lhs, int rhs) => lhs.Value == rhs;
-        public static bool operator !=(Cell lhs, int rhs) => lhs.Value != rhs;
-        public static bool operator ==(Cell lhs, Cell rhs) => lhs.Equals(rhs);
-        public static bool operator !=(Cell lhs, Cell rhs) => !lhs.Equals(rhs);
-
         // Returns other cells the input cell can see
-        internal Cell[] GetCanSee() => Puzzle.Columns[Point.X].Cells.Union(Puzzle.Rows[Point.Y].Cells).Union(Puzzle.Blocks[Block].Cells).Except(new Cell[] { this }).ToArray();
-        internal SPoint[] GetCanSeePoints() => GetCanSee().Select(c => c.Point).ToArray();
+        public IEnumerable<Cell> GetCellsVisible()
+        {
+            return puzzle.Columns[Point.X].Cells.Union(puzzle.Rows[Point.Y].Cells).Union(puzzle.Blocks[BlockIndex].Cells).Except(new Cell[] { this });
+        }
     }
 }
