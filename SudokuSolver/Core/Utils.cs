@@ -70,7 +70,7 @@ namespace Kermalis.SudokuSolver.Core
         }
         public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> source)
         {
-            if (source.Count() == 0)
+            if (!source.Any())
             {
                 return new T[0];
             }
