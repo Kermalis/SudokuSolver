@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Deployment.Application;
 using System.Linq;
 using SudokuSolver.Core;
 
@@ -36,7 +37,8 @@ namespace Kermalis.SudokuSolver.Core
             Puzzle = puzzle;
         }
 
-        public Puzzle Puzzle { get; }
+       
+        public Puzzle Puzzle { get;  }
 
         public void DoWork(object sender, DoWorkEventArgs e)
         {
@@ -74,8 +76,19 @@ namespace Kermalis.SudokuSolver.Core
 
             if (!solved)
             {
-                SearchStrategy search = new SearchStrategy(Puzzle);
-                solved = search.SolvePuzzle();
+                SearchStrategy search = new SearchStrategy();
+                solved = search.SolvePuzzle(Puzzle);
+                foreach (Region resultRow in search.Result.Rows)
+                {
+                    foreach (Cell resultRowCell in resultRow.Cells)
+                    {
+                        var pointX = resultRowCell.Point.X;
+                        var pointY = resultRowCell.Point.Y;
+                        if (Puzzle[pointX, pointY].Value == 0)
+                            Puzzle[pointX, pointY].Set(search.Result[pointX, pointY].Value);
+                    }
+                }
+
             }
 
             e.Result = solved;

@@ -1,63 +1,70 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using Kermalis.SudokuSolver.Core;
 
 namespace SudokuSolver.Core
 {
     class SearchStrategy
     {
-        private readonly Puzzle _puzzle;
-
-        private Cell[] _configurationArray;
-        public SearchStrategy(Puzzle puzzle)
+        
+        public Puzzle Result { get; set; }
+        private readonly Cell[] _configurationArray;
+        public SearchStrategy()
         {
-            _puzzle = puzzle;
+            
             _configurationArray = new Cell[9 * 9];
         }
 
-        public bool SolvePuzzle()
+        public bool SolvePuzzle(Puzzle puzzle)
         {
-            var initialDepth = InitializeConfigurationArray();
-            return DepthFirstSearch(initialDepth);
+            var initialDepth = InitializeConfigurationArray(puzzle);
+            return DepthFirstSearch(puzzle.Clone(),initialDepth);
         }
+        
 
-        public int InitializeConfigurationArray()
+        public int InitializeConfigurationArray(Puzzle puzzle)
         {
-            int k = 0;
+            var k = 0;
             for (var i = 0; i < 9; i++)
             for (var j = 0; j < 9; j++)
             {
-                if (_puzzle[i, j].HasMoreThanOneCandidate())
+                if (puzzle[i, j].HasMoreThanOneCandidate)
                 {
-                    _configurationArray[k++] = _puzzle[i, j];
+                    _configurationArray[k++] = puzzle[i, j];
                 }
             }
             Array.Sort(_configurationArray);
             return _configurationArray.Length - k;
         }
 
-        public bool DepthFirstSearch(int depth)
+        public bool DepthFirstSearch(Puzzle puzzle,int depth)
         {
+            if (!IsOkay(puzzle)) return false;
+
             if (depth == _configurationArray.Length)
             {
-                return IsOkay();
+                Result = puzzle;
+                return true;
             }
 
             var nextCell = _configurationArray[depth];
-            foreach (var candid in nextCell.Candidates)
+
+            foreach (var candid in nextCell.Candidates.ToList())
             {
-                nextCell.Set(candid);
+                var clone = puzzle.Clone();
+                clone[nextCell.Point.X,nextCell.Point.Y].Set(candid);
+
+                if (DepthFirstSearch(clone, depth + 1))
+                    return true;
             }
 
-            return true;
+            return false;
         }
 
-        public bool IsOkay()
+        public bool IsOkay(Puzzle puzzle)
         {
-            foreach (ReadOnlyCollection<Region> regionCollection in _puzzle.Regions)
+            foreach (ReadOnlyCollection<Region> regionCollection in puzzle.Regions)
             {
                 foreach (Region region in regionCollection)
                 {

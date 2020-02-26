@@ -66,7 +66,7 @@ namespace Kermalis.SudokuSolver.UI
                     MessageBox.Show("Invalid puzzle data.");
                     return;
                 }
-                catch
+                catch (Exception ex)
                 {
                     MessageBox.Show("Error loading puzzle.");
                     return;
@@ -118,7 +118,9 @@ namespace Kermalis.SudokuSolver.UI
             stopwatch.Stop();
             statusLabel.Text = string.Format("Solver finished in {0} seconds.", stopwatch.Elapsed.TotalSeconds);
             solver.Puzzle.LogAction(string.Format("Solver {0} the puzzle", ((bool)e.Result) ? "completed" : "failed"));
-            logList.SelectedIndex = solver.Puzzle.Actions.Count - 1;
+
+            if (solver.Puzzle.Actions.Count > 1)
+                logList.SelectedIndex = solver.Puzzle.Actions.Count - 1;
             logList.Select();
         }
 
@@ -128,3 +130,4 @@ namespace Kermalis.SudokuSolver.UI
         }
     }
 }
+

@@ -19,12 +19,12 @@ namespace Kermalis.SudokuSolver.Core
 
         private readonly Cell[][] _board;
 
-        public Puzzle(int[][] board, bool isCustom)
+        public Puzzle(int[][] board, bool isCustom,HashSet<int>[][] candidSet=null)
         {
             IsCustom = isCustom;
             _board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
 
-            InitializeAllCells(board);
+            InitializeAllCells(board,candidSet);
 
             Region[] rows = new Region[9],
                 columns = new Region[9],
@@ -70,15 +70,33 @@ namespace Kermalis.SudokuSolver.Core
             });
         }
 
-        private void InitializeAllCells(int[][] board)
+        private void InitializeAllCells(int[][] board,HashSet<int>[][] candidSet)
         {
             for (int x = 0; x < 9; x++)
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    _board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
+                    _board[x][y] = new Cell(this, board[x][y], new SPoint(x, y),candidSet?[x][y]);
                 }
             }
+        }
+
+        public Puzzle Clone()
+        {
+            int[][] board = new int[9][];
+            HashSet<int>[][] candidSet = new HashSet<int>[9][];
+            for (int i = 0; i < 9; i++)
+            {
+                board[i] = new int[9];
+                candidSet[i] = new HashSet<int>[9];
+                for (int j = 0; j < 9; j++)
+                {
+                    board[i][j] = _board[i][j].Value;
+                    candidSet[i][j] = _board[i][j].CloneCandidates();
+                }
+            }
+
+            return new Puzzle(board, true, candidSet);
         }
 
         public Cell this[int x, int y] => _board[x][y];
@@ -131,7 +149,7 @@ namespace Kermalis.SudokuSolver.Core
             {
                 foreach (int value in candidates)
                 {
-                    if (cell.Candidates.Remove(value))
+                    if (cell.RemoveCandidate(value))
                     {
                         changed = true;
                     }

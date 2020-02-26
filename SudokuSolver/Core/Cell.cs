@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Kermalis.SudokuSolver.Core
 {
@@ -21,7 +22,7 @@ namespace Kermalis.SudokuSolver.Core
     }
 
     [DebuggerDisplay("{DebugString()}", Name = "{ToString()}")]
-    class Cell:IComparable,IComparable<Cell>
+    class Cell:IComparable
     {
         public int Value { get; private set; }
         public HashSet<int> Candidates { get; }
@@ -81,9 +82,15 @@ namespace Kermalis.SudokuSolver.Core
             _puzzle.AddCandidates(GetCellsVisible(), new[] { oldValue });
         }
 
+        public bool RemoveCandidate(int value)
+        {
+            return Candidates.Remove(value);
+        }
+       
+
         public int CandidateCount => Candidates.Count;
         public bool HasCandidate => Candidates.Count > 0;
-        public bool HasMoreThanOneCandidate() => Candidates.Count > 1;
+        public bool HasMoreThanOneCandidate => Candidates.Count > 1;
 
         public void ChangeOriginalValue(int value)
         {
@@ -94,7 +101,19 @@ namespace Kermalis.SudokuSolver.Core
             Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
         }
 
-       
+        /// <summary>
+        /// clones a cell candidates
+        /// </summary>
+        /// <returns></returns>
+        public HashSet<int> CloneCandidates()
+        {
+            HashSet<int> candidates = new HashSet<int>();
+            foreach (int candidate in Candidates)
+            {
+                candidates.Add(candidate);
+            }
+            return candidates;
+        }
 
         public override int GetHashCode()
         {
@@ -108,7 +127,7 @@ namespace Kermalis.SudokuSolver.Core
                 return CompareTo(cell);
             }
 
-            throw new Exception("object is not comparable");
+            return -1;
         }
 
         public override bool Equals(object obj)

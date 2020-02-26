@@ -23,12 +23,15 @@ namespace Kermalis.SudokuSolver.Core
             HashSet<int> hashSet = new HashSet<int>();
             foreach (Cell cell in Cells)
             {
+                if (!cell.HasCandidate && cell.Value == 0) return true;
+
                 if (cell.Value == 0) continue;
+
                 if (!hashSet.Add(cell.Value))
-                    return false;
+                    return true;
             }
 
-            return true;
+            return false;
         }
     }
 }
