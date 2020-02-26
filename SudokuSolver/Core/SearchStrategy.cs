@@ -53,7 +53,8 @@ namespace SudokuSolver.Core
             foreach (var candid in nextCell.Candidates.ToList())
             {
                 var clone = puzzle.Clone();
-                clone[nextCell.Point.X,nextCell.Point.Y].Set(candid);
+                var cell = clone[nextCell.Point.X,nextCell.Point.Y];
+                cell.Set(candid);
 
                 if (DepthFirstSearch(clone, depth + 1))
                     return true;
