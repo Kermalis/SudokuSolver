@@ -17,5 +17,18 @@ namespace Kermalis.SudokuSolver.Core
         {
             return Cells.Where(c => c.Candidates.ContainsAll(candidates));
         }
+
+        public bool HasProblem()
+        {
+            HashSet<int> hashSet = new HashSet<int>();
+            foreach (Cell cell in Cells)
+            {
+                if (cell.Value == 0) continue;
+                if (!hashSet.Add(cell.Value))
+                    return false;
+            }
+
+            return true;
+        }
     }
 }

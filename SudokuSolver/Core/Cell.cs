@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace Kermalis.SudokuSolver.Core
     }
 
     [DebuggerDisplay("{DebugString()}", Name = "{ToString()}")]
-    class Cell
+    class Cell:IComparable,IComparable<Cell>
     {
         public int Value { get; private set; }
         public HashSet<int> Candidates { get; }
@@ -30,6 +31,7 @@ namespace Kermalis.SudokuSolver.Core
         public List<CellSnapshot> Snapshots { get; } = new List<CellSnapshot>();
 
         private readonly Puzzle _puzzle;
+
         public Cell(Puzzle puzzle, int value, SPoint point, HashSet<int> candidates = null)
         {
             _puzzle = puzzle;
@@ -57,11 +59,13 @@ namespace Kermalis.SudokuSolver.Core
                 Candidates.Clear();
                 _puzzle.RemoveCandidates(GetCellsVisible(), new[] { newValue });
             }
+
             if (refreshOtherCellCandidates)
             {
                 _puzzle.RefreshCandidates();
             }
         }
+
         /// <summary>
         /// unset the value for this cell, deletes all candidates
         /// </summary>
@@ -73,8 +77,14 @@ namespace Kermalis.SudokuSolver.Core
             {
                 Candidates.Add(i);
             }
+
             _puzzle.AddCandidates(GetCellsVisible(), new[] { oldValue });
         }
+
+        public int CandidateCount => Candidates.Count;
+        public bool HasCandidate => Candidates.Count > 0;
+        public bool HasMoreThanOneCandidate() => Candidates.Count > 1;
+
         public void ChangeOriginalValue(int value)
         {
             Set(OriginalValue = value, true);
@@ -84,24 +94,23 @@ namespace Kermalis.SudokuSolver.Core
             Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
         }
 
-        /// <summary>
-        /// clones a cell and it's candidates
-        /// </summary>
-        /// <returns></returns>
-        public Cell Clone()
-        {
-            HashSet<int> candidates = new HashSet<int>();
-            foreach (int candidate in Candidates)
-            {
-                candidates.Add(candidate);
-            }
-            return new Cell(_puzzle, Value, Point, candidates);
-        }
+       
 
         public override int GetHashCode()
         {
             return Point.GetHashCode();
         }
+
+        public int CompareTo(object obj)
+        {
+            if (obj is Cell cell)
+            {
+                return CompareTo(cell);
+            }
+
+            throw new Exception("object is not comparable");
+        }
+
         public override bool Equals(object obj)
         {
             if (obj is Cell other)
@@ -110,6 +119,14 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
+
+        public int CompareTo(Cell other)
+        {
+            if (CandidateCount > other.CandidateCount) return 1;
+            if (CandidateCount == other.CandidateCount) return 0;
+            return -1;
+        }
+
         public override string ToString()
         {
             return Point.ToString();
