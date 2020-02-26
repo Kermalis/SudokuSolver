@@ -6,7 +6,7 @@ namespace Kermalis.SudokuSolver.Core
 {
     class Region
     {
-        public readonly ReadOnlyCollection<Cell> Cells;
+        public ReadOnlyCollection<Cell> Cells { get; }
 
         public Region(Cell[] cells)
         {

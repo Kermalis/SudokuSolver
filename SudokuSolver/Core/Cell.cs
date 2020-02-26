@@ -7,9 +7,9 @@ namespace Kermalis.SudokuSolver.Core
 {
     class CellSnapshot
     {
-        public readonly int Value;
-        public readonly ReadOnlyCollection<int> Candidates;
-        public readonly bool IsCulprit;
+        public int Value { get; }
+        public ReadOnlyCollection<int> Candidates { get; }
+        public bool IsCulprit { get; }
 
         public CellSnapshot(int value, HashSet<int> candidates, bool isCulprit)
         {
@@ -23,45 +23,57 @@ namespace Kermalis.SudokuSolver.Core
     class Cell
     {
         public int Value { get; private set; }
-        public readonly HashSet<int> Candidates = new HashSet<int>(Utils.OneToNine);
-
+        public HashSet<int> Candidates { get; }
         public int OriginalValue { get; private set; }
-        public readonly int BlockIndex;
-        public readonly SPoint Point;
+        public int BlockIndex { get; }
+        public SPoint Point { get; }
+        public List<CellSnapshot> Snapshots { get; } = new List<CellSnapshot>();
 
-        public readonly List<CellSnapshot> Snapshots = new List<CellSnapshot>();
-
-        readonly Puzzle puzzle;
-
-        public Cell(Puzzle puzzle, int value, SPoint point)
+        private readonly Puzzle _puzzle;
+        public Cell(Puzzle puzzle, int value, SPoint point, HashSet<int> candidates = null)
         {
-            this.puzzle = puzzle;
+            _puzzle = puzzle;
+
             OriginalValue = Value = value;
             Point = point;
             BlockIndex = (point.X / 3) + (3 * (point.Y / 3));
+            Candidates = candidates ?? new HashSet<int>(Utils.OneToNine);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newValue">value for this cell, 0 unset the value</param>
+        /// <param name="refreshOtherCellCandidates"></param>
         public void Set(int newValue, bool refreshOtherCellCandidates = false)
         {
-            int oldValue = Value;
             Value = newValue;
             if (newValue == 0)
             {
-                foreach (int i in Utils.OneToNine)
-                {
-                    Candidates.Add(i);
-                }
-                puzzle.ChangeCandidates(GetCellsVisible(), new[] { oldValue }, false);
+                Unset();
             }
             else
             {
                 Candidates.Clear();
-                puzzle.ChangeCandidates(GetCellsVisible(), new[] { newValue });
+                _puzzle.RemoveCandidates(GetCellsVisible(), new[] { newValue });
             }
             if (refreshOtherCellCandidates)
             {
-                puzzle.RefreshCandidates();
+                _puzzle.RefreshCandidates();
             }
+        }
+        /// <summary>
+        /// unset the value for this cell, deletes all candidates
+        /// </summary>
+        public void Unset()
+        {
+            var oldValue = Value;
+            Value = 0;
+            foreach (int i in Utils.OneToNine)
+            {
+                Candidates.Add(i);
+            }
+            _puzzle.AddCandidates(GetCellsVisible(), new[] { oldValue });
         }
         public void ChangeOriginalValue(int value)
         {
@@ -70,6 +82,20 @@ namespace Kermalis.SudokuSolver.Core
         public void AddSnapshot(bool isCulprit)
         {
             Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
+        }
+
+        /// <summary>
+        /// clones a cell and it's candidates
+        /// </summary>
+        /// <returns></returns>
+        public Cell Clone()
+        {
+            HashSet<int> candidates = new HashSet<int>();
+            foreach (int candidate in Candidates)
+            {
+                candidates.Add(candidate);
+            }
+            return new Cell(_puzzle, Value, Point, candidates);
         }
 
         public override int GetHashCode()
@@ -105,7 +131,10 @@ namespace Kermalis.SudokuSolver.Core
         // Returns other cells the input cell can see
         public IEnumerable<Cell> GetCellsVisible()
         {
-            return puzzle.Columns[Point.X].Cells.Union(puzzle.Rows[Point.Y].Cells).Union(puzzle.Blocks[BlockIndex].Cells).Except(new Cell[] { this });
+            return _puzzle.Columns[Point.X].Cells
+                .Union(_puzzle.Rows[Point.Y].Cells)
+                .Union(_puzzle.Blocks[BlockIndex].Cells)
+                .Except(new Cell[] { this });
         }
     }
 }

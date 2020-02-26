@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -8,62 +9,60 @@ namespace Kermalis.SudokuSolver.Core
 {
     class Puzzle
     {
-        public readonly ReadOnlyCollection<Region> Rows;
-        public readonly ReadOnlyCollection<Region> Columns;
-        public readonly ReadOnlyCollection<Region> Blocks;
-        public readonly ReadOnlyCollection<ReadOnlyCollection<Region>> Regions;
+        public ReadOnlyCollection<Region> Rows { get; }
+        public ReadOnlyCollection<Region> Columns { get; }
+        public ReadOnlyCollection<Region> Blocks { get; }
+        public ReadOnlyCollection<ReadOnlyCollection<Region>> Regions { get; }
 
-        public readonly BindingList<string> Actions = new BindingList<string>();
-        public readonly bool IsCustom;
-        readonly Cell[][] board;
+        public BindingList<string> Actions { get; } = new BindingList<string>();
+        public bool IsCustom { get; }
+
+        private readonly Cell[][] _board;
 
         public Puzzle(int[][] board, bool isCustom)
         {
             IsCustom = isCustom;
-            this.board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
-            for (int x = 0; x < 9; x++)
-            {
-                for (int y = 0; y < 9; y++)
-                {
-                    this.board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
-                }
-            }
+            _board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
+
+            InitializeAllCells(board);
+
             Region[] rows = new Region[9],
                 columns = new Region[9],
                 blocks = new Region[9];
             for (int i = 0; i < 9; i++)
             {
-                Cell[] cells;
-                int c;
+                var cells = new Cell[9];
 
-                cells = new Cell[9];
-                for (c = 0; c < 9; c++)
+                // initialize row region
+                for (int row = 0; row < 9; row++)
                 {
-                    cells[c] = this.board[c][i];
+                    cells[row] = _board[row][i];
                 }
                 rows[i] = new Region(cells);
 
                 cells = new Cell[9];
-                for (c = 0; c < 9; c++)
+                //initialize column region
+                for (int cell = 0; cell < 9; cell++)
                 {
-                    cells[c] = this.board[i][c];
+                    cells[cell] = _board[i][cell];
                 }
                 columns[i] = new Region(cells);
 
                 cells = new Cell[9];
-                c = 0;
+                // initialize block region
+                int c = 0;
                 int ix = i % 3 * 3,
                     iy = i / 3 * 3;
                 for (int x = ix; x < ix + 3; x++)
                 {
                     for (int y = iy; y < iy + 3; y++)
                     {
-                        cells[c++] = this.board[x][y];
+                        cells[c++] = _board[x][y];
                     }
                 }
                 blocks[i] = new Region(cells);
             }
-            Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new ReadOnlyCollection<Region>[]
+            Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new[]
             {
                 Rows = new ReadOnlyCollection<Region>(rows),
                 Columns = new ReadOnlyCollection<Region>(columns),
@@ -71,12 +70,28 @@ namespace Kermalis.SudokuSolver.Core
             });
         }
 
-        public Cell this[int x, int y]
+        private void InitializeAllCells(int[][] board)
         {
-            get => board[x][y];
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    _board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
+                }
+            }
         }
 
+        public Cell this[int x, int y] => _board[x][y];
+
         // Add/Remove the following candidates at the following locations
+        /// <summary>
+        /// use addCandidate or removeCandidates methods for better understanding
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <param name="candidates"></param>
+        /// <param name="remove"></param>
+        /// <returns></returns>
+        [Obsolete]
         public bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates, bool remove = true)
         {
             bool changed = false;
@@ -92,6 +107,39 @@ namespace Kermalis.SudokuSolver.Core
             }
             return changed;
         }
+
+        public bool AddCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates)
+        {
+            bool changed = false;
+            foreach (Cell cell in cells)
+            {
+                foreach (int value in candidates)
+                {
+                    if (cell.Candidates.Add(value))
+                    {
+                        changed = true;
+                    }
+                }
+            }
+            return changed;
+        }
+
+        public bool RemoveCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates)
+        {
+            bool changed = false;
+            foreach (Cell cell in cells)
+            {
+                foreach (int value in candidates)
+                {
+                    if (cell.Candidates.Remove(value))
+                    {
+                        changed = true;
+                    }
+                }
+            }
+            return changed;
+        }
+
         public void RefreshCandidates()
         {
             for (int x = 0; x < 9; x++)

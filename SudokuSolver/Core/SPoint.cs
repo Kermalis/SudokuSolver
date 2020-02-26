@@ -2,7 +2,8 @@
 {
     class SPoint
     {
-        public readonly int X, Y;
+        public int X { get; }
+        public int Y { get; }
 
         public SPoint(int x, int y)
         {
@@ -20,7 +21,12 @@
         }
         public override int GetHashCode()
         {
-            return unchecked(X ^ Y);
+            //better way of calcalating hash according to
+            /// https://stackoverflow.com/questions/892618/create-a-hashcode-of-two-numbers
+            var hash = 23;
+            hash = hash * 31 + X;
+            hash = hash * 31 + Y;
+            return hash;
         }
         public static string RowLetter(int row)
         {
