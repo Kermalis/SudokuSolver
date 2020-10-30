@@ -200,7 +200,7 @@ namespace Kermalis.SudokuSolver.Core
                                             case 2:
                                                 {
                                                     IEnumerable<int> commonCandidates = notSet.Select(c => c.Candidates.Except(candidates)).IntersectAll();
-                                                    if (commonCandidates.Count() > 0
+                                                    if (commonCandidates.Any()
                                                         && puzzle.ChangeCandidates(notSet.Select(c => c.GetCellsVisible()).IntersectAll(), commonCandidates))
                                                     {
                                                         changed = true;
@@ -260,8 +260,8 @@ namespace Kermalis.SudokuSolver.Core
                                             why = c.Point.Y == y1 ? y2 : y1;
                                         foreach (int i in candidates)
                                         {
-                                            if (puzzle.Rows[why].GetCellsWithCandidates(i).Except(cells).Count() == 0 // "i" only appears in our UR
-                                                && puzzle.Columns[eks].GetCellsWithCandidates(i).Except(cells).Count() == 0)
+                                            if (!puzzle.Rows[why].GetCellsWithCandidates(i).Except(cells).Any() // "i" only appears in our UR
+                                                && !puzzle.Columns[eks].GetCellsWithCandidates(i).Except(cells).Any())
                                             {
                                                 Cell diag = puzzle[eks, why];
                                                 if (diag.Candidates.Count == 2)
@@ -673,7 +673,7 @@ namespace Kermalis.SudokuSolver.Core
                     }
                     // Now check if a row has a distinct candidate
                     IEnumerable<int> zero_distinct = rowCandidates[0].Except(rowCandidates[1]).Except(rowCandidates[2]);
-                    if (zero_distinct.Count() > 0)
+                    if (zero_distinct.Any())
                     {
                         if (RemovePointingTuple(true, 0, zero_distinct))
                         {
@@ -681,7 +681,7 @@ namespace Kermalis.SudokuSolver.Core
                         }
                     }
                     IEnumerable<int> one_distinct = rowCandidates[1].Except(rowCandidates[0]).Except(rowCandidates[2]);
-                    if (one_distinct.Count() > 0)
+                    if (one_distinct.Any())
                     {
                         if (RemovePointingTuple(true, 1, one_distinct))
                         {
@@ -689,7 +689,7 @@ namespace Kermalis.SudokuSolver.Core
                         }
                     }
                     IEnumerable<int> two_distinct = rowCandidates[2].Except(rowCandidates[0]).Except(rowCandidates[1]);
-                    if (two_distinct.Count() > 0)
+                    if (two_distinct.Any())
                     {
                         if (RemovePointingTuple(true, 2, two_distinct))
                         {
@@ -698,7 +698,7 @@ namespace Kermalis.SudokuSolver.Core
                     }
                     // Now check if a column has a distinct candidate
                     zero_distinct = colCand[0].Except(colCand[1]).Except(colCand[2]);
-                    if (zero_distinct.Count() > 0)
+                    if (zero_distinct.Any())
                     {
                         if (RemovePointingTuple(false, 0, zero_distinct))
                         {
@@ -706,7 +706,7 @@ namespace Kermalis.SudokuSolver.Core
                         }
                     }
                     one_distinct = colCand[1].Except(colCand[0]).Except(colCand[2]);
-                    if (one_distinct.Count() > 0)
+                    if (one_distinct.Any())
                     {
                         if (RemovePointingTuple(false, 1, one_distinct))
                         {
@@ -714,7 +714,7 @@ namespace Kermalis.SudokuSolver.Core
                         }
                     }
                     two_distinct = colCand[2].Except(colCand[0]).Except(colCand[1]);
-                    if (two_distinct.Count() > 0)
+                    if (two_distinct.Any())
                     {
                         if (RemovePointingTuple(false, 2, two_distinct))
                         {

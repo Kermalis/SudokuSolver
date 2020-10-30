@@ -70,9 +70,9 @@ namespace Kermalis.SudokuSolver.Core
         }
         public static IEnumerable<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> source)
         {
-            if (source.Count() == 0)
+            if (!source.Any())
             {
-                return new T[0];
+                return Array.Empty<T>();
             }
             IEnumerable<T>[] inp = source.ToArray();
             IEnumerable<T> output = inp[0];
@@ -84,7 +84,7 @@ namespace Kermalis.SudokuSolver.Core
         }
         public static IEnumerable<T> UniteAll<T>(this IEnumerable<IEnumerable<T>> source)
         {
-            IEnumerable<T> output = new T[0];
+            IEnumerable<T> output = Array.Empty<T>();
             foreach (IEnumerable<T> i in source)
             {
                 output = output.Union(i);
