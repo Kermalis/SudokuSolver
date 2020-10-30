@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace Kermalis.SudokuSolver.Core
 {
-    class CellSnapshot
+    internal sealed class CellSnapshot
     {
-        public readonly int Value;
-        public readonly ReadOnlyCollection<int> Candidates;
-        public readonly bool IsCulprit;
+        public int Value { get; }
+        public ReadOnlyCollection<int> Candidates { get; }
+        public bool IsCulprit { get; }
 
         public CellSnapshot(int value, HashSet<int> candidates, bool isCulprit)
         {
@@ -20,25 +20,22 @@ namespace Kermalis.SudokuSolver.Core
     }
 
     [DebuggerDisplay("{DebugString()}", Name = "{ToString()}")]
-    class Cell
+    internal sealed class Cell
     {
         public int Value { get; private set; }
-        public readonly HashSet<int> Candidates = new HashSet<int>(Utils.OneToNine);
+        public HashSet<int> Candidates { get; } = new HashSet<int>(Utils.OneToNine);
 
         public int OriginalValue { get; private set; }
-        public readonly int BlockIndex;
-        public readonly SPoint Point;
+        public SPoint Point { get; }
 
-        public readonly List<CellSnapshot> Snapshots = new List<CellSnapshot>();
-
-        readonly Puzzle puzzle;
+        public List<CellSnapshot> Snapshots { get; } = new List<CellSnapshot>();
+        private readonly Puzzle _puzzle;
 
         public Cell(Puzzle puzzle, int value, SPoint point)
         {
-            this.puzzle = puzzle;
+            _puzzle = puzzle;
             OriginalValue = Value = value;
             Point = point;
-            BlockIndex = (point.X / 3) + (3 * (point.Y / 3));
         }
 
         public void Set(int newValue, bool refreshOtherCellCandidates = false)
@@ -51,23 +48,24 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     Candidates.Add(i);
                 }
-                puzzle.ChangeCandidates(GetCellsVisible(), new[] { oldValue }, false);
+                _puzzle.ChangeCandidates(GetCellsVisible(), oldValue, remove: false);
             }
             else
             {
                 Candidates.Clear();
-                puzzle.ChangeCandidates(GetCellsVisible(), new[] { newValue });
+                _puzzle.ChangeCandidates(GetCellsVisible(), newValue);
             }
             if (refreshOtherCellCandidates)
             {
-                puzzle.RefreshCandidates();
+                _puzzle.RefreshCandidates();
             }
         }
         public void ChangeOriginalValue(int value)
         {
-            Set(OriginalValue = value, true);
+            OriginalValue = value;
+            Set(value, refreshOtherCellCandidates: true);
         }
-        public void AddSnapshot(bool isCulprit)
+        public void CreateSnapshot(bool isCulprit)
         {
             Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
         }
@@ -102,10 +100,13 @@ namespace Kermalis.SudokuSolver.Core
             return s;
         }
 
-        // Returns other cells the input cell can see
+        /// <summary>Returns other cells the input cell can "see" (besides the input cell)</summary>
         public IEnumerable<Cell> GetCellsVisible()
         {
-            return puzzle.Columns[Point.X].Cells.Union(puzzle.Rows[Point.Y].Cells).Union(puzzle.Blocks[BlockIndex].Cells).Except(new Cell[] { this });
+            Region col = _puzzle.Columns[Point.X];
+            Region row = _puzzle.Rows[Point.Y];
+            Region block = _puzzle.Blocks[Point.BlockIndex];
+            return col.Union(row).Union(block).Except(new Cell[] { this });
         }
     }
 }

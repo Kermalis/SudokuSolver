@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Kermalis.SudokuSolver.Core
 {
-    class Puzzle
+    internal sealed class Puzzle
     {
         public readonly ReadOnlyCollection<Region> Rows;
         public readonly ReadOnlyCollection<Region> Columns;
@@ -15,17 +15,19 @@ namespace Kermalis.SudokuSolver.Core
 
         public readonly BindingList<string> Actions = new BindingList<string>();
         public readonly bool IsCustom;
-        readonly Cell[][] board;
+        private readonly Cell[][] _board;
+
+        public Cell this[int x, int y] => _board[x][y];
 
         public Puzzle(int[][] board, bool isCustom)
         {
             IsCustom = isCustom;
-            this.board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
+            _board = Utils.CreateJaggedArray<Cell[][]>(9, 9);
             for (int x = 0; x < 9; x++)
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    this.board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
+                    _board[x][y] = new Cell(this, board[x][y], new SPoint(x, y));
                 }
             }
             Region[] rows = new Region[9],
@@ -39,18 +41,16 @@ namespace Kermalis.SudokuSolver.Core
                 cells = new Cell[9];
                 for (c = 0; c < 9; c++)
                 {
-                    cells[c] = this.board[c][i];
+                    cells[c] = _board[c][i];
                 }
                 rows[i] = new Region(cells);
 
-                cells = new Cell[9];
                 for (c = 0; c < 9; c++)
                 {
-                    cells[c] = this.board[i][c];
+                    cells[c] = _board[i][c];
                 }
                 columns[i] = new Region(cells);
 
-                cells = new Cell[9];
                 c = 0;
                 int ix = i % 3 * 3,
                     iy = i / 3 * 3;
@@ -58,7 +58,7 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     for (int y = iy; y < iy + 3; y++)
                     {
-                        cells[c++] = this.board[x][y];
+                        cells[c++] = _board[x][y];
                     }
                 }
                 blocks[i] = new Region(cells);
@@ -71,12 +71,34 @@ namespace Kermalis.SudokuSolver.Core
             });
         }
 
-        public Cell this[int x, int y]
+        public bool ChangeCandidates(Cell cell, int candidate, bool remove = true)
         {
-            get => board[x][y];
+            return remove ? cell.Candidates.Remove(candidate) : cell.Candidates.Add(candidate);
         }
-
-        // Add/Remove the following candidates at the following locations
+        public bool ChangeCandidates(Cell cell, IEnumerable<int> candidates, bool remove = true)
+        {
+            bool changed = false;
+            foreach (int value in candidates)
+            {
+                if (remove ? cell.Candidates.Remove(value) : cell.Candidates.Add(value))
+                {
+                    changed = true;
+                }
+            }
+            return changed;
+        }
+        public bool ChangeCandidates(IEnumerable<Cell> cells, int candidate, bool remove = true)
+        {
+            bool changed = false;
+            foreach (Cell cell in cells)
+            {
+                if (remove ? cell.Candidates.Remove(candidate) : cell.Candidates.Add(candidate))
+                {
+                    changed = true;
+                }
+            }
+            return changed;
+        }
         public bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates, bool remove = true)
         {
             bool changed = false;
@@ -150,33 +172,85 @@ namespace Kermalis.SudokuSolver.Core
             {
                 for (int x = 0; x < 9; x++)
                 {
-                    string line = "";
+                    string line = string.Empty;
                     for (int y = 0; y < 9; y++)
                     {
                         Cell cell = this[y, x];
-                        line += cell.OriginalValue == 0 ? "-" : cell.OriginalValue.ToString();
+                        if (cell.OriginalValue == 0)
+                        {
+                            line += '-';
+                        }
+                        else
+                        {
+                            line += cell.OriginalValue.ToString();
+                        }
                     }
                     file.WriteLine(line);
                 }
             }
         }
 
+        private string TechniqueFormat(string technique, string format, params object[] args)
+        {
+            return string.Format(string.Format("{0,-20}", technique) + format, args);
+        }
+
+        public void LogAction(string technique, Cell culprit, int candidate)
+        {
+            LogAction(technique, culprit, "{0}: {1}", culprit.ToString(), candidate.ToString());
+        }
+        public void LogAction(string technique, IEnumerable<Cell> culprits, int candidate)
+        {
+            LogAction(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidate.ToString());
+        }
+        public void LogAction(string technique, Cell culprit, IEnumerable<int> candidates)
+        {
+            LogAction(technique, culprit, "{0}: {1}", culprit.ToString(), candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
+        }
         public void LogAction(string technique, IEnumerable<Cell> culprits, IEnumerable<int> candidates)
         {
             LogAction(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
         }
+        public void LogAction(string technique, Cell culprit, string format, params object[] args)
+        {
+            LogAction(TechniqueFormat(technique, format, args), culprit);
+        }
         public void LogAction(string technique, IEnumerable<Cell> culprits, string format, params object[] args)
         {
-            LogAction(string.Format(string.Format("{0,-20}", technique) + format, args), culprits);
+            LogAction(TechniqueFormat(technique, format, args), culprits);
         }
-        public void LogAction(string action, IEnumerable<Cell> culprits = null)
+        public void LogAction(string action)
         {
             for (int x = 0; x < 9; x++)
             {
                 for (int y = 0; y < 9; y++)
                 {
                     Cell cell = this[x, y];
-                    cell.AddSnapshot(culprits != null && culprits.Contains(cell));
+                    cell.CreateSnapshot(false);
+                }
+            }
+            Actions.Add(action);
+        }
+        public void LogAction(string action, Cell culprit)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = this[x, y];
+                    cell.CreateSnapshot(culprit == cell);
+                }
+            }
+            Actions.Add(action);
+        }
+        public void LogAction(string action, IEnumerable<Cell> culprits)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = this[x, y];
+                    cell.CreateSnapshot(culprits != null && culprits.Contains(cell));
                 }
             }
             Actions.Add(action);

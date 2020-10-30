@@ -5,17 +5,18 @@ using System.Linq;
 
 namespace Kermalis.SudokuSolver.Core
 {
-    static class Utils
+    internal static class Utils
     {
-        public static readonly ReadOnlyCollection<int> OneToNine = new ReadOnlyCollection<int>(new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+        public static ReadOnlyCollection<int> OneToNine { get; } = new ReadOnlyCollection<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
 
         public static T CreateJaggedArray<T>(params int[] lengths)
         {
             return (T)InitializeJaggedArray(typeof(T).GetElementType(), 0, lengths);
         }
-        static object InitializeJaggedArray(Type type, int index, int[] lengths)
+
+        private static object InitializeJaggedArray(Type type, int index, int[] lengths)
         {
-            Array array = Array.CreateInstance(type, lengths[index]);
+            var array = Array.CreateInstance(type, lengths[index]);
             Type elementType = type.GetElementType();
             if (elementType != null)
             {

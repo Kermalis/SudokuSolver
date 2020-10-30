@@ -6,23 +6,26 @@ using System.Linq;
 
 namespace Kermalis.SudokuSolver.Core
 {
-    class Solver
+    internal sealed class Solver
     {
-        private class SolverTechnique
+        private sealed class SolverTechnique
         {
-            public readonly Func<Puzzle, bool> Function;
-            public readonly bool CanRepeat;
+            public Func<Puzzle, bool> Function { get; }
+            /// <summary>Currently unused.</summary>
+            public string Url { get; }
+            public bool CanRepeat { get; }
 
             public SolverTechnique(Func<Puzzle, bool> function, string url, bool canRepeat = false)
             {
-                // I know the text is unused
                 Function = function;
+                Url = url;
                 CanRepeat = canRepeat;
             }
         }
-        static readonly SolverTechnique[] techniques = new SolverTechnique[]
+
+        private static readonly SolverTechnique[] _techniques = new SolverTechnique[]
         {
-            new SolverTechnique(HiddenSingle, "Hidden single", true),
+            new SolverTechnique(HiddenSingle, "Hidden single", canRepeat: true),
             new SolverTechnique(NakedPair, "http://hodoku.sourceforge.net/en/tech_naked.php#n2"),
             new SolverTechnique(HiddenPair, "http://hodoku.sourceforge.net/en/tech_hidden.php#h2"),
             new SolverTechnique(LockedCandidate, "http://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
@@ -40,9 +43,9 @@ namespace Kermalis.SudokuSolver.Core
             new SolverTechnique(HiddenRectangle, "http://hodoku.sourceforge.net/en/tech_ur.php#hr"),
             new SolverTechnique(AvoidableRectangle, "http://hodoku.sourceforge.net/en/tech_ur.php#ar")
         };
-        SolverTechnique previousTechnique;
+        private SolverTechnique _previousTechnique;
 
-        public readonly Puzzle Puzzle;
+        public Puzzle Puzzle { get; }
 
         public Solver(Puzzle puzzle)
         {
@@ -74,7 +77,7 @@ namespace Kermalis.SudokuSolver.Core
                             if (a.Length == 1)
                             {
                                 cell.Set(a[0]);
-                                Puzzle.LogAction("Naked single", new Cell[] { cell }, a);
+                                Puzzle.LogAction("Naked single", cell, a[0]);
                                 changed = true;
                             }
                         }
@@ -90,30 +93,30 @@ namespace Kermalis.SudokuSolver.Core
             e.Result = solved;
         }
 
-        bool RunTechnique()
+        private bool RunTechnique()
         {
-            foreach (SolverTechnique t in techniques)
+            foreach (SolverTechnique t in _techniques)
             {
                 // Skip the previous technique unless it is good to repeat it
-                if ((t != previousTechnique || t.CanRepeat) && t.Function.Invoke(Puzzle))
+                if ((t != _previousTechnique || t.CanRepeat) && t.Function.Invoke(Puzzle))
                 {
-                    previousTechnique = t;
+                    _previousTechnique = t;
                     return true;
                 }
             }
-            if (previousTechnique == null)
+            if (_previousTechnique == null)
             {
                 return false;
             }
             else
             {
-                return previousTechnique.Function.Invoke(Puzzle);
+                return _previousTechnique.Function.Invoke(Puzzle);
             }
         }
 
         #region Methods
 
-        static bool AvoidableRectangle(Puzzle puzzle)
+        private static bool AvoidableRectangle(Puzzle puzzle)
         {
             for (int type = 1; type <= 2; type++)
             {
@@ -131,8 +134,8 @@ namespace Kermalis.SudokuSolver.Core
                                 {
                                     for (int value2 = value1 + 1; value2 <= 9; value2++)
                                     {
-                                        int[] candidates = { value1, value2 };
-                                        Cell[] cells = { c1.Cells[y1], c1.Cells[y2], c2.Cells[y1], c2.Cells[y2] };
+                                        int[] candidates = new int[] { value1, value2 };
+                                        var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
                                         if (cells.Any(c => c.OriginalValue != 0))
                                         {
                                             continue;
@@ -144,69 +147,70 @@ namespace Kermalis.SudokuSolver.Core
                                         switch (type)
                                         {
                                             case 1:
+                                            {
+                                                if (alreadySet.Count() != 3)
                                                 {
-                                                    if (alreadySet.Count() != 3)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                             case 2:
+                                            {
+                                                if (alreadySet.Count() != 2)
                                                 {
-                                                    if (alreadySet.Count() != 2)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                         }
-                                        bool no = true;
-                                        Cell[][] pairs = { new Cell[] { cells[0], cells[3] }, new Cell[] { cells[1], cells[2] } };
+                                        var pairs = new Cell[][]
+                                        {
+                                            new Cell[] { cells[0], cells[3] },
+                                            new Cell[] { cells[1], cells[2] }
+                                        };
                                         foreach (Cell[] pair in pairs)
                                         {
+                                            Cell[] otherPair = pair == pairs[0] ? pairs[1] : pairs[0];
                                             foreach (int i in candidates)
                                             {
-                                                Cell[] otherPair = pairs.Single(carr => carr != pair);
                                                 int otherVal = candidates.Single(ca => ca != i);
                                                 if (((pair[0].Value == i && pair[1].Value == 0 && pair[1].Candidates.Count == 2 && pair[1].Candidates.Contains(i))
                                                     || (pair[1].Value == i && pair[0].Value == 0 && pair[0].Candidates.Count == 2 && pair[0].Candidates.Contains(i)))
                                                     && otherPair.All(c => c.Value == otherVal || (c.Candidates.Count == 2 && c.Candidates.Contains(otherVal))))
                                                 {
-                                                    no = false;
+                                                    goto breakpairs;
                                                 }
                                             }
                                         }
-                                        if (no)
-                                        {
-                                            continue;
-                                        }
+                                        continue; // Did not find
+                                    breakpairs:
                                         bool changed = false;
                                         switch (type)
                                         {
                                             case 1:
+                                            {
+                                                Cell cell = notSet.ElementAt(0);
+                                                if (cell.Candidates.Count == 2)
                                                 {
-                                                    Cell cell = notSet.ElementAt(0);
-                                                    if (cell.Candidates.Count == 2)
-                                                    {
-                                                        cell.Set(cell.Candidates.Except(candidates).ElementAt(0));
-                                                    }
-                                                    else
-                                                    {
-                                                        puzzle.ChangeCandidates(new Cell[] { cell }, cell.Candidates.Intersect(candidates));
-                                                    }
-                                                    changed = true;
-                                                    break;
+                                                    cell.Set(cell.Candidates.Except(candidates).ElementAt(0));
                                                 }
+                                                else
+                                                {
+                                                    puzzle.ChangeCandidates(cell, cell.Candidates.Intersect(candidates));
+                                                }
+                                                changed = true;
+                                                break;
+                                            }
                                             case 2:
+                                            {
+                                                IEnumerable<int> commonCandidates = notSet.Select(c => c.Candidates.Except(candidates)).IntersectAll();
+                                                if (commonCandidates.Any()
+                                                    && puzzle.ChangeCandidates(notSet.Select(c => c.GetCellsVisible()).IntersectAll(), commonCandidates))
                                                 {
-                                                    IEnumerable<int> commonCandidates = notSet.Select(c => c.Candidates.Except(candidates)).IntersectAll();
-                                                    if (commonCandidates.Any()
-                                                        && puzzle.ChangeCandidates(notSet.Select(c => c.GetCellsVisible()).IntersectAll(), commonCandidates))
-                                                    {
-                                                        changed = true;
-                                                    }
-                                                    break;
+                                                    changed = true;
                                                 }
+                                                break;
+                                            }
                                         }
 
                                         if (changed)
@@ -223,7 +227,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool HiddenRectangle(Puzzle puzzle)
+
+        private static bool HiddenRectangle(Puzzle puzzle)
         {
             for (int x1 = 0; x1 < 9; x1++)
             {
@@ -239,8 +244,8 @@ namespace Kermalis.SudokuSolver.Core
                             {
                                 for (int value2 = value1 + 1; value2 <= 9; value2++)
                                 {
-                                    int[] candidates = { value1, value2 };
-                                    Cell[] cells = { c1.Cells[y1], c1.Cells[y2], c2.Cells[y1], c2.Cells[y2] };
+                                    int[] candidates = new int[] { value1, value2 };
+                                    var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
                                     if (cells.Any(c => !c.Candidates.ContainsAll(candidates)))
                                     {
                                         continue;
@@ -260,8 +265,8 @@ namespace Kermalis.SudokuSolver.Core
                                             why = c.Point.Y == y1 ? y2 : y1;
                                         foreach (int i in candidates)
                                         {
-                                            if (!puzzle.Rows[why].GetCellsWithCandidates(i).Except(cells).Any() // "i" only appears in our UR
-                                                && !puzzle.Columns[eks].GetCellsWithCandidates(i).Except(cells).Any())
+                                            if (!puzzle.Rows[why].GetCellsWithCandidate(i).Except(cells).Any() // "i" only appears in our UR
+                                                && !puzzle.Columns[eks].GetCellsWithCandidate(i).Except(cells).Any())
                                             {
                                                 Cell diag = puzzle[eks, why];
                                                 if (diag.Candidates.Count == 2)
@@ -270,7 +275,7 @@ namespace Kermalis.SudokuSolver.Core
                                                 }
                                                 else
                                                 {
-                                                    puzzle.ChangeCandidates(new Cell[] { diag }, new int[] { i == value1 ? value2 : value1 });
+                                                    puzzle.ChangeCandidates(diag, i == value1 ? value2 : value1);
                                                 }
                                                 changed = true;
                                             }
@@ -289,7 +294,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool UniqueRectangle(Puzzle puzzle)
+
+        private static bool UniqueRectangle(Puzzle puzzle)
         {
             for (int type = 1; type <= 6; type++) // Type
             {
@@ -307,8 +313,8 @@ namespace Kermalis.SudokuSolver.Core
                                 {
                                     for (int value2 = value1 + 1; value2 <= 9; value2++)
                                     {
-                                        int[] candidates = { value1, value2 };
-                                        Cell[] cells = { c1.Cells[y1], c1.Cells[y2], c2.Cells[y1], c2.Cells[y2] };
+                                        int[] candidates = new int[] { value1, value2 };
+                                        var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
                                         if (cells.Any(c => !c.Candidates.ContainsAll(candidates)))
                                         {
                                             continue;
@@ -321,183 +327,183 @@ namespace Kermalis.SudokuSolver.Core
                                         switch (type) // Check for candidate counts
                                         {
                                             case 1:
+                                            {
+                                                if (two.Length != 3 || gtTwo.Length != 1)
                                                 {
-                                                    if (two.Length != 3 || gtTwo.Length != 1)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                             case 2:
                                             case 6:
+                                            {
+                                                if (two.Length != 2 || three.Length != 2)
                                                 {
-                                                    if (two.Length != 2 || three.Length != 2)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                             case 3:
+                                            {
+                                                if (two.Length != 2 || gtTwo.Length != 2)
                                                 {
-                                                    if (two.Length != 2 || gtTwo.Length != 2)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                             case 4:
+                                            {
+                                                if (two.Length != 2 || three.Length != 1 || four.Length != 1)
                                                 {
-                                                    if (two.Length != 2 || three.Length != 1 || four.Length != 1)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                             case 5:
+                                            {
+                                                if (two.Length != 1 || three.Length != 3)
                                                 {
-                                                    if (two.Length != 1 || three.Length != 3)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                break;
+                                            }
                                         }
 
                                         switch (type) // Check for extra rules
                                         {
                                             case 1:
+                                            {
+                                                if (gtTwo[0].Candidates.Count == 3)
                                                 {
-                                                    if (gtTwo[0].Candidates.Count == 3)
-                                                    {
-                                                        gtTwo[0].Set(gtTwo[0].Candidates.Single(c => !candidates.Contains(c)));
-                                                    }
-                                                    else
-                                                    {
-                                                        puzzle.ChangeCandidates(gtTwo, candidates);
-                                                    }
-                                                    break;
+                                                    gtTwo[0].Set(gtTwo[0].Candidates.Single(c => !candidates.Contains(c)));
                                                 }
+                                                else
+                                                {
+                                                    puzzle.ChangeCandidates(gtTwo, candidates);
+                                                }
+                                                break;
+                                            }
                                             case 2:
+                                            {
+                                                if (!three[0].Candidates.SetEquals(three[1].Candidates))
                                                 {
-                                                    if (!three[0].Candidates.SetEquals(three[1].Candidates))
-                                                    {
-                                                        continue;
-                                                    }
-                                                    if (!puzzle.ChangeCandidates(three[0].GetCellsVisible().Intersect(three[1].GetCellsVisible()), three[0].Candidates.Except(candidates)))
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                if (!puzzle.ChangeCandidates(three[0].GetCellsVisible().Intersect(three[1].GetCellsVisible()), three[0].Candidates.Except(candidates)))
+                                                {
+                                                    continue;
+                                                }
+                                                break;
+                                            }
                                             case 3:
+                                            {
+                                                if (gtTwo[0].Point.X != gtTwo[1].Point.X && gtTwo[0].Point.Y != gtTwo[1].Point.Y)
                                                 {
-                                                    if (gtTwo[0].Point.X != gtTwo[1].Point.X && gtTwo[0].Point.Y != gtTwo[1].Point.Y)
-                                                    {
-                                                        continue; // Must be non-diagonal
-                                                    }
-                                                    IEnumerable<int> others = gtTwo[0].Candidates.Except(candidates).Union(gtTwo[1].Candidates.Except(candidates));
-                                                    if (others.Count() > 4 || others.Count() < 2)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    IEnumerable<Cell> nSubset = ((gtTwo[0].Point.Y == gtTwo[1].Point.Y) ? // Same row
-                                                        puzzle.Rows[gtTwo[0].Point.Y] : puzzle.Columns[gtTwo[0].Point.X])
-                                                        .Cells.Where(c => c.Candidates.ContainsAny(others) && !c.Candidates.ContainsAny(Utils.OneToNine.Except(others)));
-                                                    if (nSubset.Count() != others.Count() - 1)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    if (!puzzle.ChangeCandidates(nSubset.Union(gtTwo).Select(c => c.GetCellsVisible()).IntersectAll(), others))
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue; // Must be non-diagonal
                                                 }
-                                            case 4:
+                                                IEnumerable<int> others = gtTwo[0].Candidates.Except(candidates).Union(gtTwo[1].Candidates.Except(candidates));
+                                                if (others.Count() > 4 || others.Count() < 2)
                                                 {
-                                                    var remove = new int[1];
-                                                    if (four[0].BlockIndex == three[0].BlockIndex)
+                                                    continue;
+                                                }
+                                                IEnumerable<Cell> nSubset = ((gtTwo[0].Point.Y == gtTwo[1].Point.Y) ? // Same row
+                                                        puzzle.Rows[gtTwo[0].Point.Y] : puzzle.Columns[gtTwo[0].Point.X])
+                                                        .Where(c => c.Candidates.ContainsAny(others) && !c.Candidates.ContainsAny(Utils.OneToNine.Except(others)));
+                                                if (nSubset.Count() != others.Count() - 1)
+                                                {
+                                                    continue;
+                                                }
+                                                if (!puzzle.ChangeCandidates(nSubset.Union(gtTwo).Select(c => c.GetCellsVisible()).IntersectAll(), others))
+                                                {
+                                                    continue;
+                                                }
+                                                break;
+                                            }
+                                            case 4:
+                                            {
+                                                int[] remove = new int[1];
+                                                if (four[0].Point.BlockIndex == three[0].Point.BlockIndex)
+                                                {
+                                                    if (puzzle.Blocks[four[0].Point.BlockIndex].GetCellsWithCandidate(value1).Count() == 2)
                                                     {
-                                                        if (puzzle.Blocks[four[0].BlockIndex].GetCellsWithCandidates(value1).Count() == 2)
+                                                        remove[0] = value2;
+                                                    }
+                                                    else if (puzzle.Blocks[four[0].Point.BlockIndex].GetCellsWithCandidate(value2).Count() == 2)
+                                                    {
+                                                        remove[0] = value1;
+                                                    }
+                                                }
+                                                if (remove[0] != 0) // They share the same row/column but not the same block
+                                                {
+                                                    if (three[0].Point.X == three[0].Point.X)
+                                                    {
+                                                        if (puzzle.Columns[four[0].Point.X].GetCellsWithCandidate(value1).Count() == 2)
                                                         {
                                                             remove[0] = value2;
                                                         }
-                                                        else if (puzzle.Blocks[four[0].BlockIndex].GetCellsWithCandidates(value2).Count() == 2)
+                                                        else if (puzzle.Columns[four[0].Point.X].GetCellsWithCandidate(value2).Count() == 2)
                                                         {
                                                             remove[0] = value1;
                                                         }
                                                     }
-                                                    if (remove[0] != 0) // They share the same row/column but not the same block
-                                                    {
-                                                        if (three[0].Point.X == three[0].Point.X)
-                                                        {
-                                                            if (puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(value1).Count() == 2)
-                                                            {
-                                                                remove[0] = value2;
-                                                            }
-                                                            else if (puzzle.Columns[four[0].Point.X].GetCellsWithCandidates(value2).Count() == 2)
-                                                            {
-                                                                remove[0] = value1;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(value1).Count() == 2)
-                                                            {
-                                                                remove[0] = value2;
-                                                            }
-                                                            else if (puzzle.Rows[four[0].Point.Y].GetCellsWithCandidates(value2).Count() == 2)
-                                                            {
-                                                                remove[0] = value1;
-                                                            }
-                                                        }
-                                                    }
                                                     else
                                                     {
-                                                        continue;
+                                                        if (puzzle.Rows[four[0].Point.Y].GetCellsWithCandidate(value1).Count() == 2)
+                                                        {
+                                                            remove[0] = value2;
+                                                        }
+                                                        else if (puzzle.Rows[four[0].Point.Y].GetCellsWithCandidate(value2).Count() == 2)
+                                                        {
+                                                            remove[0] = value1;
+                                                        }
                                                     }
-                                                    puzzle.ChangeCandidates(cells.Except(l[2]), remove);
-                                                    break;
                                                 }
+                                                else
+                                                {
+                                                    continue;
+                                                }
+                                                puzzle.ChangeCandidates(cells.Except(l[2]), remove);
+                                                break;
+                                            }
                                             case 5:
+                                            {
+                                                if (!three[0].Candidates.SetEquals(three[1].Candidates) || !three[1].Candidates.SetEquals(three[2].Candidates))
                                                 {
-                                                    if (!three[0].Candidates.SetEquals(three[1].Candidates) || !three[1].Candidates.SetEquals(three[2].Candidates))
-                                                    {
-                                                        continue;
-                                                    }
-                                                    if (!puzzle.ChangeCandidates(three.Select(c => c.GetCellsVisible()).IntersectAll(), three[0].Candidates.Except(candidates)))
-                                                    {
-                                                        continue;
-                                                    }
-                                                    break;
+                                                    continue;
                                                 }
+                                                if (!puzzle.ChangeCandidates(three.Select(c => c.GetCellsVisible()).IntersectAll(), three[0].Candidates.Except(candidates)))
+                                                {
+                                                    continue;
+                                                }
+                                                break;
+                                            }
                                             case 6:
+                                            {
+                                                if (three[0].Point.X == three[1].Point.X)
                                                 {
-                                                    if (three[0].Point.X == three[1].Point.X)
-                                                    {
-                                                        continue;
-                                                    }
-                                                    int set;
-                                                    if (c1.GetCellsWithCandidates(value1).Count() == 2 && c2.GetCellsWithCandidates(value1).Count() == 2 // Check if "v" only appears in the UR
-                                                        && puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(value1).Count() == 2
-                                                            && puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(value1).Count() == 2)
-                                                    {
-                                                        set = value1;
-                                                    }
-                                                    else if (c1.GetCellsWithCandidates(value2).Count() == 2 && c2.GetCellsWithCandidates(value2).Count() == 2
-                                                        && puzzle.Rows[two[0].Point.Y].GetCellsWithCandidates(value2).Count() == 2
-                                                            && puzzle.Rows[two[1].Point.Y].GetCellsWithCandidates(value2).Count() == 2)
-                                                    {
-                                                        set = value2;
-                                                    }
-                                                    else
-                                                    {
-                                                        continue;
-                                                    }
-                                                    two[0].Set(set);
-                                                    two[1].Set(set);
-                                                    break;
+                                                    continue;
                                                 }
+                                                int set;
+                                                if (c1.GetCellsWithCandidate(value1).Count() == 2 && c2.GetCellsWithCandidate(value1).Count() == 2 // Check if "v" only appears in the UR
+                                                    && puzzle.Rows[two[0].Point.Y].GetCellsWithCandidate(value1).Count() == 2
+                                                        && puzzle.Rows[two[1].Point.Y].GetCellsWithCandidate(value1).Count() == 2)
+                                                {
+                                                    set = value1;
+                                                }
+                                                else if (c1.GetCellsWithCandidate(value2).Count() == 2 && c2.GetCellsWithCandidate(value2).Count() == 2
+                                                    && puzzle.Rows[two[0].Point.Y].GetCellsWithCandidate(value2).Count() == 2
+                                                        && puzzle.Rows[two[1].Point.Y].GetCellsWithCandidate(value2).Count() == 2)
+                                                {
+                                                    set = value2;
+                                                }
+                                                else
+                                                {
+                                                    continue;
+                                                }
+                                                two[0].Set(set);
+                                                two[1].Set(set);
+                                                break;
+                                            }
                                         }
 
                                         puzzle.LogAction("Unique rectangle", cells, candidates);
@@ -512,15 +518,15 @@ namespace Kermalis.SudokuSolver.Core
             return false;
         }
 
-        static bool XYZWing(Puzzle puzzle)
+        private static bool XYZWing(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
                 bool FindXYZWings(Region region)
                 {
                     bool changed = false;
-                    Cell[] cells2 = region.Cells.Where(c => c.Candidates.Count == 2).ToArray();
-                    Cell[] cells3 = region.Cells.Where(c => c.Candidates.Count == 3).ToArray();
+                    Cell[] cells2 = region.Where(c => c.Candidates.Count == 2).ToArray();
+                    Cell[] cells3 = region.Where(c => c.Candidates.Count == 3).ToArray();
                     if (cells2.Length > 0 && cells3.Length > 0)
                     {
                         for (int j = 0; j < cells2.Length; j++)
@@ -534,7 +540,7 @@ namespace Kermalis.SudokuSolver.Core
                                     continue;
                                 }
 
-                                IEnumerable<Cell> c3Sees = c3.GetCellsVisible().Except(region.Cells)
+                                IEnumerable<Cell> c3Sees = c3.GetCellsVisible().Except(region)
                                     .Where(c => c.Candidates.Count == 2 // If it has 2 candidates
                                     && c.Candidates.Intersect(c3.Candidates).Count() == 2 // Shares them both with p3
                                     && c.Candidates.Intersect(c3.Candidates).Count() == 1); // And shares one with p2
@@ -561,13 +567,14 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool YWing(Puzzle puzzle)
+
+        private static bool YWing(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
                 bool FindYWings(Region region)
                 {
-                    Cell[] cells = region.Cells.Where(c => c.Candidates.Count == 2).ToArray();
+                    Cell[] cells = region.Where(c => c.Candidates.Count == 2).ToArray();
                     if (cells.Length > 1)
                     {
                         for (int j = 0; j < cells.Length; j++)
@@ -585,7 +592,7 @@ namespace Kermalis.SudokuSolver.Core
                                 int other1 = c1.Candidates.Except(inter).ElementAt(0),
                                     other2 = c2.Candidates.Except(inter).ElementAt(0);
 
-                                Cell[] a = { c1, c2 };
+                                var a = new Cell[] { c1, c2 };
                                 foreach (Cell cell in a)
                                 {
                                     IEnumerable<Cell> c3a = cell.GetCellsVisible().Except(cells).Where(c => c.Candidates.Count == 2 && c.Candidates.Intersect(new int[] { other1, other2 }).Count() == 2);
@@ -594,7 +601,7 @@ namespace Kermalis.SudokuSolver.Core
                                         Cell c3 = c3a.ElementAt(0);
                                         Cell cOther = a.Single(c => c != cell);
                                         IEnumerable<Cell> commonCells = cOther.GetCellsVisible().Intersect(c3.GetCellsVisible());
-                                        IEnumerable<int> candidate = cOther.Candidates.Intersect(c3.Candidates); // Will just be 1 candidate
+                                        int candidate = cOther.Candidates.Intersect(c3.Candidates).Single(); // Will just be 1 candidate
                                         if (puzzle.ChangeCandidates(commonCells, candidate))
                                         {
                                             puzzle.LogAction("Y-Wing", new Cell[] { c1, c2, c3 }, candidate);
@@ -616,28 +623,30 @@ namespace Kermalis.SudokuSolver.Core
             return false;
         }
 
-        static bool Jellyfish(Puzzle puzzle)
+        private static bool Jellyfish(Puzzle puzzle)
         {
             return FindFish(puzzle, 4);
         }
-        static bool Swordfish(Puzzle puzzle)
+
+        private static bool Swordfish(Puzzle puzzle)
         {
             return FindFish(puzzle, 3);
         }
-        static bool XWing(Puzzle puzzle)
+
+        private static bool XWing(Puzzle puzzle)
         {
             return FindFish(puzzle, 2);
         }
 
-        static bool PointingTuple(Puzzle puzzle)
+        private static bool PointingTuple(Puzzle puzzle)
         {
             for (int i = 0; i < 3; i++)
             {
                 Cell[][] blockrow = new Cell[3][], blockcol = new Cell[3][];
                 for (int r = 0; r < 3; r++)
                 {
-                    blockrow[r] = puzzle.Blocks[r + (i * 3)].Cells.ToArray();
-                    blockcol[r] = puzzle.Blocks[i + (r * 3)].Cells.ToArray();
+                    blockrow[r] = puzzle.Blocks[r + (i * 3)].ToArray();
+                    blockcol[r] = puzzle.Blocks[i + (r * 3)].ToArray();
                 }
                 for (int r = 0; r < 3; r++) // 3 blocks in a blockrow/blockcolumn
                 {
@@ -667,7 +676,8 @@ namespace Kermalis.SudokuSolver.Core
                         if (changed)
                         {
                             puzzle.LogAction("Pointing tuple", doRows ? blockrow[r].GetRowInBlock(rcIndex) : blockcol[r].GetColumnInBlock(rcIndex),
-                            "Starting in block{0} {1}'s {2} block, {3} {0}: {4}", doRows ? "row" : "column", i + 1, ordinalStr[r + 1], ordinalStr[rcIndex + 1], candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
+                            "Starting in block{0} {1}'s {2} block, {3} {0}: {4}",
+                            doRows ? "row" : "column", i + 1, _ordinalStr[r + 1], _ordinalStr[rcIndex + 1], candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
                         }
                         return changed;
                     }
@@ -725,7 +735,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool LockedCandidate(Puzzle puzzle)
+
+        private static bool LockedCandidate(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -733,17 +744,19 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     bool FindLockedCandidates(bool doRows)
                     {
-                        IEnumerable<Cell> cellsWithCandidates = (doRows ? puzzle.Rows : puzzle.Columns)[i].GetCellsWithCandidates(candidate);
+                        IEnumerable<Cell> cellsWithCandidates = (doRows ? puzzle.Rows : puzzle.Columns)[i].GetCellsWithCandidate(candidate);
 
                         // Even if a block only has these candidates for this "k" value, it'd be slower to check that before cancelling "BlacklistCandidates"
                         if (cellsWithCandidates.Count() == 3 || cellsWithCandidates.Count() == 2)
                         {
-                            int[] blocks = cellsWithCandidates.Select(c => c.BlockIndex).Distinct().ToArray();
+                            int[] blocks = cellsWithCandidates.Select(c => c.Point.BlockIndex).Distinct().ToArray();
                             if (blocks.Length == 1)
                             {
-                                if (puzzle.ChangeCandidates(puzzle.Blocks[blocks[0]].Cells.Except(cellsWithCandidates), new int[] { candidate }))
+                                if (puzzle.ChangeCandidates(puzzle.Blocks[blocks[0]].Except(cellsWithCandidates), candidate))
                                 {
-                                    puzzle.LogAction("Locked candidate", cellsWithCandidates, "{4} {0} locks within block {1}: {2}: {3}", doRows ? SPoint.RowLetter(i) : SPoint.ColumnLetter(i), blocks[0] + 1, cellsWithCandidates.Print(), candidate, doRows ? "Row" : "Column");
+                                    puzzle.LogAction("Locked candidate", cellsWithCandidates,
+                                        "{4} {0} locks within block {1}: {2}: {3}",
+                                        doRows ? SPoint.RowLetter(i) : SPoint.ColumnLetter(i), blocks[0] + 1, cellsWithCandidates.Print(), candidate, doRows ? "Row" : "Column");
                                     return true;
                                 }
                             }
@@ -759,7 +772,7 @@ namespace Kermalis.SudokuSolver.Core
             return false;
         }
 
-        static bool HiddenQuadruple(Puzzle puzzle)
+        private static bool HiddenQuadruple(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -772,7 +785,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool NakedQuadruple(Puzzle puzzle)
+
+        private static bool NakedQuadruple(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -785,7 +799,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool HiddenTriple(Puzzle puzzle)
+
+        private static bool HiddenTriple(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -798,7 +813,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool NakedTriple(Puzzle puzzle)
+
+        private static bool NakedTriple(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -811,7 +827,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool HiddenPair(Puzzle puzzle)
+
+        private static bool HiddenPair(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -824,7 +841,8 @@ namespace Kermalis.SudokuSolver.Core
             }
             return false;
         }
-        static bool NakedPair(Puzzle puzzle)
+
+        private static bool NakedPair(Puzzle puzzle)
         {
             for (int i = 0; i < 9; i++)
             {
@@ -838,7 +856,7 @@ namespace Kermalis.SudokuSolver.Core
             return false;
         }
 
-        static bool HiddenSingle(Puzzle puzzle)
+        private static bool HiddenSingle(Puzzle puzzle)
         {
             bool changed = false;
             for (int i = 0; i < 9; i++)
@@ -847,11 +865,11 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     for (int candidate = 1; candidate <= 9; candidate++)
                     {
-                        Cell[] c = region[i].GetCellsWithCandidates(candidate).ToArray();
+                        Cell[] c = region[i].GetCellsWithCandidate(candidate).ToArray();
                         if (c.Length == 1)
                         {
                             c[0].Set(candidate);
-                            puzzle.LogAction("Hidden single", c, new[] { candidate });
+                            puzzle.LogAction("Hidden single", c[0], candidate);
                             changed = true;
                         }
                     }
@@ -864,12 +882,12 @@ namespace Kermalis.SudokuSolver.Core
 
         #region Method Helpers
 
-        static readonly string[] fishStr = { string.Empty, string.Empty, "X-Wing", "Swordfish", "Jellyfish" };
-        static readonly string[] tupleStr = { string.Empty, "single", "pair", "triple", "quadruple" };
-        static readonly string[] ordinalStr = { string.Empty, "1st", "2nd", "3rd" };
+        private static readonly string[] _fishStr = new string[] { string.Empty, string.Empty, "X-Wing", "Swordfish", "Jellyfish" };
+        private static readonly string[] _tupleStr = new string[] { string.Empty, "single", "pair", "triple", "quadruple" };
+        private static readonly string[] _ordinalStr = new string[] { string.Empty, "1st", "2nd", "3rd" };
 
         // Find X-Wing, Swordfish & Jellyfish
-        static bool FindFish(Puzzle puzzle, int amount)
+        private static bool FindFish(Puzzle puzzle, int amount)
         {
             for (int candidate = 1; candidate <= 9; candidate++)
             {
@@ -877,28 +895,28 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     if (loop == amount)
                     {
-                        IEnumerable<IEnumerable<Cell>> rowCells = indexes.Select(i => puzzle.Rows[i].GetCellsWithCandidates(candidate)),
-                            colCells = indexes.Select(i => puzzle.Columns[i].GetCellsWithCandidates(candidate));
+                        IEnumerable<IEnumerable<Cell>> rowCells = indexes.Select(i => puzzle.Rows[i].GetCellsWithCandidate(candidate)),
+                            colCells = indexes.Select(i => puzzle.Columns[i].GetCellsWithCandidate(candidate));
 
                         IEnumerable<int> rowLengths = rowCells.Select(cells => cells.Count()),
                             colLengths = colCells.Select(parr => parr.Count());
 
-                        int[] candidates = { candidate };
+                        int[] candidates = new int[] { candidate };
                         if (rowLengths.Max() == amount && rowLengths.Min() > 0 && rowCells.Select(cells => cells.Select(c => c.Point.X)).UniteAll().Count() <= amount)
                         {
                             IEnumerable<Cell> row2D = rowCells.UniteAll();
-                            if (puzzle.ChangeCandidates(row2D.Select(c => puzzle.Columns[c.Point.X].Cells).UniteAll().Except(row2D), candidates))
+                            if (puzzle.ChangeCandidates(row2D.Select(c => puzzle.Columns[c.Point.X]).UniteAll().Except(row2D), candidates))
                             {
-                                puzzle.LogAction(fishStr[amount], row2D, candidates);
+                                puzzle.LogAction(_fishStr[amount], row2D, candidates);
                                 return true;
                             }
                         }
                         if (colLengths.Max() == amount && colLengths.Min() > 0 && colCells.Select(cells => cells.Select(c => c.Point.Y)).UniteAll().Count() <= amount)
                         {
                             IEnumerable<Cell> col2D = colCells.UniteAll();
-                            if (puzzle.ChangeCandidates(col2D.Select(c => puzzle.Rows[c.Point.Y].Cells).UniteAll().Except(col2D), candidates))
+                            if (puzzle.ChangeCandidates(col2D.Select(c => puzzle.Rows[c.Point.Y]).UniteAll().Except(col2D), candidates))
                             {
-                                puzzle.LogAction(fishStr[amount], col2D, candidates);
+                                puzzle.LogAction(_fishStr[amount], col2D, candidates);
                                 return true;
                             }
                         }
@@ -926,10 +944,10 @@ namespace Kermalis.SudokuSolver.Core
         }
 
         // Find hidden pairs/triples/quadruples
-        static bool FindHiddenTuples(Puzzle puzzle, Region region, int amount)
+        private static bool FindHiddenTuples(Puzzle puzzle, Region region, int amount)
         {
             // If there are only "amount" cells with candidates, we don't have to waste our time
-            if (region.Cells.Count(c => c.Candidates.Count > 0) == amount)
+            if (region.Count(c => c.Candidates.Count > 0) == amount)
             {
                 return false;
             }
@@ -938,7 +956,7 @@ namespace Kermalis.SudokuSolver.Core
             {
                 if (loop == amount)
                 {
-                    IEnumerable<Cell> cells = candidates.Select(c => region.GetCellsWithCandidates(c)).UniteAll();
+                    IEnumerable<Cell> cells = candidates.Select(c => region.GetCellsWithCandidate(c)).UniteAll();
                     IEnumerable<int> cands = cells.Select(c => c.Candidates).UniteAll();
                     if (cells.Count() != amount // There aren't "amount" cells for our tuple to be in
                         || cands.Count() == amount // We already know it's a tuple (might be faster to skip this check, idk)
@@ -948,7 +966,7 @@ namespace Kermalis.SudokuSolver.Core
                     }
                     if (puzzle.ChangeCandidates(cells, Utils.OneToNine.Except(candidates)))
                     {
-                        puzzle.LogAction("Hidden " + tupleStr[amount], cells, candidates);
+                        puzzle.LogAction("Hidden " + _tupleStr[amount], cells, candidates);
                         return true;
                     }
                 }
@@ -970,7 +988,7 @@ namespace Kermalis.SudokuSolver.Core
         }
 
         // Find naked pairs/triples/quadruples
-        static bool FindNakedTuples(Puzzle puzzle, Region region, int amount)
+        private static bool FindNakedTuples(Puzzle puzzle, Region region, int amount)
         {
             bool DoNakedTuples(int loop, Cell[] cells, int[] indexes)
             {
@@ -979,9 +997,9 @@ namespace Kermalis.SudokuSolver.Core
                     IEnumerable<int> combo = cells.Select(c => c.Candidates).UniteAll();
                     if (combo.Count() == amount)
                     {
-                        if (puzzle.ChangeCandidates(indexes.Select(i => region.Cells[i].GetCellsVisible()).IntersectAll(), combo))
+                        if (puzzle.ChangeCandidates(indexes.Select(i => region[i].GetCellsVisible()).IntersectAll(), combo))
                         {
-                            puzzle.LogAction("Naked " + tupleStr[amount], cells, combo);
+                            puzzle.LogAction("Naked " + _tupleStr[amount], cells, combo);
                             return true;
                         }
                     }
@@ -990,7 +1008,7 @@ namespace Kermalis.SudokuSolver.Core
                 {
                     for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
                     {
-                        Cell c = region.Cells[i];
+                        Cell c = region[i];
                         if (c.Candidates.Count == 0)
                         {
                             continue;
