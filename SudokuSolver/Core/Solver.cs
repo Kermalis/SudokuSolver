@@ -26,22 +26,22 @@ namespace Kermalis.SudokuSolver.Core
         private static readonly SolverTechnique[] _techniques = new SolverTechnique[]
         {
             new SolverTechnique(HiddenSingle, "Hidden single", canRepeat: true),
-            new SolverTechnique(NakedPair, "http://hodoku.sourceforge.net/en/tech_naked.php#n2"),
-            new SolverTechnique(HiddenPair, "http://hodoku.sourceforge.net/en/tech_hidden.php#h2"),
-            new SolverTechnique(LockedCandidate, "http://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
-            new SolverTechnique(PointingTuple, "http://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
-            new SolverTechnique(NakedTriple, "http://hodoku.sourceforge.net/en/tech_naked.php#n3"),
-            new SolverTechnique(HiddenTriple, "http://hodoku.sourceforge.net/en/tech_hidden.php#h3"),
-            new SolverTechnique(XWing, "http://hodoku.sourceforge.net/en/tech_fishb.php#bf2"),
-            new SolverTechnique(Swordfish, "http://hodoku.sourceforge.net/en/tech_fishb.php#bf3"),
-            new SolverTechnique(YWing, "http://www.sudokuwiki.org/Y_Wing_Strategy"),
-            new SolverTechnique(XYZWing, "http://www.sudokuwiki.org/XYZ_Wing"),
-            new SolverTechnique(NakedQuadruple, "http://hodoku.sourceforge.net/en/tech_naked.php#n4"),
-            new SolverTechnique(HiddenQuadruple, "http://hodoku.sourceforge.net/en/tech_hidden.php#h4"),
-            new SolverTechnique(Jellyfish, "http://hodoku.sourceforge.net/en/tech_fishb.php#bf4"),
-            new SolverTechnique(UniqueRectangle, "http://hodoku.sourceforge.net/en/tech_ur.php"),
-            new SolverTechnique(HiddenRectangle, "http://hodoku.sourceforge.net/en/tech_ur.php#hr"),
-            new SolverTechnique(AvoidableRectangle, "http://hodoku.sourceforge.net/en/tech_ur.php#ar")
+            new SolverTechnique(NakedPair, "https://hodoku.sourceforge.net/en/tech_naked.php#n2"),
+            new SolverTechnique(HiddenPair, "https://hodoku.sourceforge.net/en/tech_hidden.php#h2"),
+            new SolverTechnique(LockedCandidate, "https://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
+            new SolverTechnique(PointingTuple, "https://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
+            new SolverTechnique(NakedTriple, "https://hodoku.sourceforge.net/en/tech_naked.php#n3"),
+            new SolverTechnique(HiddenTriple, "https://hodoku.sourceforge.net/en/tech_hidden.php#h3"),
+            new SolverTechnique(XWing, "https://hodoku.sourceforge.net/en/tech_fishb.php#bf2"),
+            new SolverTechnique(Swordfish, "https://hodoku.sourceforge.net/en/tech_fishb.php#bf3"),
+            new SolverTechnique(YWing, "https://www.sudokuwiki.org/Y_Wing_Strategy"),
+            new SolverTechnique(XYZWing, "https://www.sudokuwiki.org/XYZ_Wing"),
+            new SolverTechnique(NakedQuadruple, "https://hodoku.sourceforge.net/en/tech_naked.php#n4"),
+            new SolverTechnique(HiddenQuadruple, "https://hodoku.sourceforge.net/en/tech_hidden.php#h4"),
+            new SolverTechnique(Jellyfish, "https://hodoku.sourceforge.net/en/tech_fishb.php#bf4"),
+            new SolverTechnique(UniqueRectangle, "https://hodoku.sourceforge.net/en/tech_ur.php"),
+            new SolverTechnique(HiddenRectangle, "https://hodoku.sourceforge.net/en/tech_ur.php#hr"),
+            new SolverTechnique(AvoidableRectangle, "https://hodoku.sourceforge.net/en/tech_ur.php#ar")
         };
         private SolverTechnique _previousTechnique;
 
