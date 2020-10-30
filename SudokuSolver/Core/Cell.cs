@@ -10,12 +10,14 @@ namespace Kermalis.SudokuSolver.Core
         public int Value { get; }
         public ReadOnlyCollection<int> Candidates { get; }
         public bool IsCulprit { get; }
+        public bool IsSemiCulprit { get; }
 
-        public CellSnapshot(int value, HashSet<int> candidates, bool isCulprit)
+        public CellSnapshot(int value, HashSet<int> candidates, bool isCulprit, bool isSemiCulprit)
         {
             Value = value;
             Candidates = new ReadOnlyCollection<int>(candidates.ToArray());
             IsCulprit = isCulprit;
+            IsSemiCulprit = isSemiCulprit;
         }
     }
 
@@ -65,9 +67,9 @@ namespace Kermalis.SudokuSolver.Core
             OriginalValue = value;
             Set(value, refreshOtherCellCandidates: true);
         }
-        public void CreateSnapshot(bool isCulprit)
+        public void CreateSnapshot(bool isCulprit, bool isSemiCulprit)
         {
-            Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit));
+            Snapshots.Add(new CellSnapshot(Value, Candidates, isCulprit, isSemiCulprit));
         }
 
         public override int GetHashCode()
@@ -103,10 +105,10 @@ namespace Kermalis.SudokuSolver.Core
         /// <summary>Returns other cells the input cell can "see" (besides the input cell)</summary>
         public IEnumerable<Cell> GetCellsVisible()
         {
+            Region block = _puzzle.Blocks[Point.BlockIndex];
             Region col = _puzzle.Columns[Point.X];
             Region row = _puzzle.Rows[Point.Y];
-            Region block = _puzzle.Blocks[Point.BlockIndex];
-            return col.Union(row).Union(block).Except(new Cell[] { this });
+            return block.Union(col).Union(row).Except(new Cell[] { this });
         }
     }
 }

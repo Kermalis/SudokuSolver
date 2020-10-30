@@ -93,6 +93,22 @@ namespace Kermalis.SudokuSolver.Core
             return output;
         }
 
+        public static string SingleOrMultiToString<T>(this IEnumerable<T> source)
+        {
+            int i = 0;
+            foreach (T o in source)
+            {
+                if (++i > 1)
+                {
+                    return source.Print();
+                }
+            }
+            if (i == 0)
+            {
+                throw new ArgumentException();
+            }
+            return source.ElementAt(0).ToString();
+        }
         public static string Print<T>(this IEnumerable<T> source)
         {
             return "( " + string.Join(", ", source) + " )";

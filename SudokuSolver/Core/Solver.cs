@@ -13,19 +13,17 @@ namespace Kermalis.SudokuSolver.Core
             public Func<Puzzle, bool> Function { get; }
             /// <summary>Currently unused.</summary>
             public string Url { get; }
-            public bool CanRepeat { get; }
 
-            public SolverTechnique(Func<Puzzle, bool> function, string url, bool canRepeat = false)
+            public SolverTechnique(Func<Puzzle, bool> function, string url)
             {
                 Function = function;
                 Url = url;
-                CanRepeat = canRepeat;
             }
         }
 
         private static readonly SolverTechnique[] _techniques = new SolverTechnique[]
         {
-            new SolverTechnique(HiddenSingle, "Hidden single", canRepeat: true),
+            new SolverTechnique(HiddenSingle, "Hidden single"),
             new SolverTechnique(NakedPair, "https://hodoku.sourceforge.net/en/tech_naked.php#n2"),
             new SolverTechnique(HiddenPair, "https://hodoku.sourceforge.net/en/tech_hidden.php#h2"),
             new SolverTechnique(LockedCandidate, "https://hodoku.sourceforge.net/en/tech_intersections.php#lc1"),
@@ -36,6 +34,7 @@ namespace Kermalis.SudokuSolver.Core
             new SolverTechnique(Swordfish, "https://hodoku.sourceforge.net/en/tech_fishb.php#bf3"),
             new SolverTechnique(YWing, "https://www.sudokuwiki.org/Y_Wing_Strategy"),
             new SolverTechnique(XYZWing, "https://www.sudokuwiki.org/XYZ_Wing"),
+            new SolverTechnique(XYChain, "https://www.sudokuwiki.org/XY_Chains"),
             new SolverTechnique(NakedQuadruple, "https://hodoku.sourceforge.net/en/tech_naked.php#n4"),
             new SolverTechnique(HiddenQuadruple, "https://hodoku.sourceforge.net/en/tech_hidden.php#h4"),
             new SolverTechnique(Jellyfish, "https://hodoku.sourceforge.net/en/tech_fishb.php#bf4"),
@@ -43,7 +42,6 @@ namespace Kermalis.SudokuSolver.Core
             new SolverTechnique(HiddenRectangle, "https://hodoku.sourceforge.net/en/tech_ur.php#hr"),
             new SolverTechnique(AvoidableRectangle, "https://hodoku.sourceforge.net/en/tech_ur.php#ar")
         };
-        private SolverTechnique _previousTechnique;
 
         public Puzzle Puzzle { get; }
 
@@ -77,7 +75,7 @@ namespace Kermalis.SudokuSolver.Core
                             if (a.Length == 1)
                             {
                                 cell.Set(a[0]);
-                                Puzzle.LogAction("Naked single", cell, a[0]);
+                                Puzzle.LogAction(Puzzle.TechniqueFormat("Naked single", "{0}: {1}", cell, a[0]), cell, (Cell)null);
                                 changed = true;
                             }
                         }
@@ -98,20 +96,12 @@ namespace Kermalis.SudokuSolver.Core
             foreach (SolverTechnique t in _techniques)
             {
                 // Skip the previous technique unless it is good to repeat it
-                if ((t != _previousTechnique || t.CanRepeat) && t.Function.Invoke(Puzzle))
+                if (t.Function.Invoke(Puzzle))
                 {
-                    _previousTechnique = t;
                     return true;
                 }
             }
-            if (_previousTechnique == null)
-            {
-                return false;
-            }
-            else
-            {
-                return _previousTechnique.Function.Invoke(Puzzle);
-            }
+            return false;
         }
 
         #region Methods
@@ -215,7 +205,7 @@ namespace Kermalis.SudokuSolver.Core
 
                                         if (changed)
                                         {
-                                            puzzle.LogAction("Avoidable rectangle", cells, candidates);
+                                            puzzle.LogAction(Puzzle.TechniqueFormat("Avoidable rectangle", "{0}: {1}", cells.Print(), candidates.Print()), cells, (Cell)null);
                                             return true;
                                         }
                                     }
@@ -283,7 +273,7 @@ namespace Kermalis.SudokuSolver.Core
                                     }
                                     if (changed)
                                     {
-                                        puzzle.LogAction("Hidden rectangle", cells, candidates);
+                                        puzzle.LogAction(Puzzle.TechniqueFormat("Hidden rectangle", "{0}: {1}", cells.Print(), candidates.Print()), cells, (Cell)null);
                                         return true;
                                     }
                                 }
@@ -506,12 +496,76 @@ namespace Kermalis.SudokuSolver.Core
                                             }
                                         }
 
-                                        puzzle.LogAction("Unique rectangle", cells, candidates);
+                                        puzzle.LogAction(Puzzle.TechniqueFormat("Unique rectangle", "{0}: {1}", cells.Print(), candidates.Print()), cells, (Cell)null);
                                         return true;
                                     }
                                 }
                             }
                         }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static bool XYChain(Puzzle puzzle)
+        {
+            bool Recursion(Cell startCell, List<Cell> ignore, Cell currentCell, int theOneThatWillEndItAllBaybee, int mustFind)
+            {
+                ignore.Add(currentCell);
+                IEnumerable<Cell> visible = currentCell.GetCellsVisible().Except(ignore);
+                foreach (Cell cell in visible)
+                {
+                    if (cell.Candidates.Count != 2)
+                    {
+                        continue; // Must have two candidates
+                    }
+                    if (!cell.Candidates.Contains(mustFind))
+                    {
+                        continue; // Must have "mustFind"
+                    }
+                    int otherCandidate = cell.Candidates.Except(new int[] { mustFind }).Single();
+                    // Check end condition
+                    if (otherCandidate == theOneThatWillEndItAllBaybee && startCell != currentCell)
+                    {
+                        Cell[] commonVisibleWithStartCell = cell.GetCellsVisible().Intersect(startCell.GetCellsVisible()).ToArray();
+                        if (commonVisibleWithStartCell.Length > 0)
+                        {
+                            IEnumerable<Cell> commonWithEndingCandidate = commonVisibleWithStartCell.Where(c => c.Candidates.Contains(theOneThatWillEndItAllBaybee));
+                            if (puzzle.ChangeCandidates(commonWithEndingCandidate, theOneThatWillEndItAllBaybee))
+                            {
+                                ignore.Remove(startCell); // Remove here because we're now using "ignore" as "semiCulprits" and exiting
+                                var culprits = new Cell[] { startCell, cell };
+                                puzzle.LogAction(Puzzle.TechniqueFormat("XY-Chain", "{0}-{1}: {2}", culprits.Print(), ignore.SingleOrMultiToString(), theOneThatWillEndItAllBaybee), culprits, ignore);
+                                return true;
+                            }
+                        }
+                    }
+                    // Loop again
+                    if (Recursion(startCell, ignore, cell, theOneThatWillEndItAllBaybee, otherCandidate))
+                    {
+                        return true;
+                    }
+                }
+                ignore.Remove(currentCell);
+                return false;
+            }
+
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = puzzle[x, y];
+                    if (cell.Candidates.Count != 2)
+                    {
+                        continue; // Must have two candidates
+                    }
+                    var ignore = new List<Cell>();
+                    int start1 = cell.Candidates.ElementAt(0);
+                    int start2 = cell.Candidates.ElementAt(1);
+                    if (Recursion(cell, ignore, cell, start1, start2) || Recursion(cell, ignore, cell, start2, start1))
+                    {
+                        return true;
                     }
                 }
             }
@@ -547,10 +601,11 @@ namespace Kermalis.SudokuSolver.Core
                                 foreach (Cell c2_2 in c3Sees)
                                 {
                                     IEnumerable<Cell> allSee = c2.GetCellsVisible().Intersect(c3.GetCellsVisible()).Intersect(c2_2.GetCellsVisible());
-                                    IEnumerable<int> allHave = c2.Candidates.Intersect(c3.Candidates).Intersect(c2_2.Candidates); // Will be 1 Length
+                                    int allHave = c2.Candidates.Intersect(c3.Candidates).Intersect(c2_2.Candidates).Single(); // Will be 1 Length
                                     if (puzzle.ChangeCandidates(allSee, allHave))
                                     {
-                                        puzzle.LogAction("XYZ-Wing", new Cell[] { c2, c3, c2_2 }, allHave);
+                                        var culprits = new Cell[] { c2, c3, c2_2 };
+                                        puzzle.LogAction(Puzzle.TechniqueFormat("XYZ-Wing", "{0}: {1}", culprits.Print(), allHave), culprits, (Cell)null);
                                         changed = true;
                                     }
                                 }
@@ -604,7 +659,8 @@ namespace Kermalis.SudokuSolver.Core
                                         int candidate = cOther.Candidates.Intersect(c3.Candidates).Single(); // Will just be 1 candidate
                                         if (puzzle.ChangeCandidates(commonCells, candidate))
                                         {
-                                            puzzle.LogAction("Y-Wing", new Cell[] { c1, c2, c3 }, candidate);
+                                            var culprits = new Cell[] { c1, c2, c3 };
+                                            puzzle.LogAction(Puzzle.TechniqueFormat("Y-Wing", "{0}: {1}", culprits.Print(), candidate), culprits, (Cell)null);
                                             return true;
                                         }
                                     }
@@ -675,9 +731,10 @@ namespace Kermalis.SudokuSolver.Core
                         }
                         if (changed)
                         {
-                            puzzle.LogAction("Pointing tuple", doRows ? blockrow[r].GetRowInBlock(rcIndex) : blockcol[r].GetColumnInBlock(rcIndex),
-                            "Starting in block{0} {1}'s {2} block, {3} {0}: {4}",
-                            doRows ? "row" : "column", i + 1, _ordinalStr[r + 1], _ordinalStr[rcIndex + 1], candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
+                            Cell[] culprits = doRows ? blockrow[r].GetRowInBlock(rcIndex) : blockcol[r].GetColumnInBlock(rcIndex);
+                            puzzle.LogAction(Puzzle.TechniqueFormat("Pointing tuple",
+                                "Starting in block{0} {1}'s {2} block, {3} {0}: {4}",
+                                doRows ? "row" : "column", i + 1, _ordinalStr[r + 1], _ordinalStr[rcIndex + 1], candidates.SingleOrMultiToString()), culprits, (Cell)null);
                         }
                         return changed;
                     }
@@ -754,9 +811,9 @@ namespace Kermalis.SudokuSolver.Core
                             {
                                 if (puzzle.ChangeCandidates(puzzle.Blocks[blocks[0]].Except(cellsWithCandidates), candidate))
                                 {
-                                    puzzle.LogAction("Locked candidate", cellsWithCandidates,
+                                    puzzle.LogAction(Puzzle.TechniqueFormat("Locked candidate",
                                         "{4} {0} locks within block {1}: {2}: {3}",
-                                        doRows ? SPoint.RowLetter(i) : SPoint.ColumnLetter(i), blocks[0] + 1, cellsWithCandidates.Print(), candidate, doRows ? "Row" : "Column");
+                                        doRows ? SPoint.RowLetter(i) : SPoint.ColumnLetter(i), blocks[0] + 1, cellsWithCandidates.Print(), candidate, doRows ? "Row" : "Column"), cellsWithCandidates, (Cell)null);
                                     return true;
                                 }
                             }
@@ -869,7 +926,7 @@ namespace Kermalis.SudokuSolver.Core
                         if (c.Length == 1)
                         {
                             c[0].Set(candidate);
-                            puzzle.LogAction("Hidden single", c[0], candidate);
+                            puzzle.LogAction(Puzzle.TechniqueFormat("Hidden single", "{0}: {1}", c[0], candidate), c[0], (Cell)null);
                             changed = true;
                         }
                     }
@@ -901,22 +958,21 @@ namespace Kermalis.SudokuSolver.Core
                         IEnumerable<int> rowLengths = rowCells.Select(cells => cells.Count()),
                             colLengths = colCells.Select(parr => parr.Count());
 
-                        int[] candidates = new int[] { candidate };
                         if (rowLengths.Max() == amount && rowLengths.Min() > 0 && rowCells.Select(cells => cells.Select(c => c.Point.X)).UniteAll().Count() <= amount)
                         {
                             IEnumerable<Cell> row2D = rowCells.UniteAll();
-                            if (puzzle.ChangeCandidates(row2D.Select(c => puzzle.Columns[c.Point.X]).UniteAll().Except(row2D), candidates))
+                            if (puzzle.ChangeCandidates(row2D.Select(c => puzzle.Columns[c.Point.X]).UniteAll().Except(row2D), candidate))
                             {
-                                puzzle.LogAction(_fishStr[amount], row2D, candidates);
+                                puzzle.LogAction(Puzzle.TechniqueFormat(_fishStr[amount], "{0}: {1}", row2D.Print(), candidate), row2D, (Cell)null);
                                 return true;
                             }
                         }
                         if (colLengths.Max() == amount && colLengths.Min() > 0 && colCells.Select(cells => cells.Select(c => c.Point.Y)).UniteAll().Count() <= amount)
                         {
                             IEnumerable<Cell> col2D = colCells.UniteAll();
-                            if (puzzle.ChangeCandidates(col2D.Select(c => puzzle.Rows[c.Point.Y]).UniteAll().Except(col2D), candidates))
+                            if (puzzle.ChangeCandidates(col2D.Select(c => puzzle.Rows[c.Point.Y]).UniteAll().Except(col2D), candidate))
                             {
-                                puzzle.LogAction(_fishStr[amount], col2D, candidates);
+                                puzzle.LogAction(Puzzle.TechniqueFormat(_fishStr[amount], "{0}: {1}", col2D.Print(), candidate), col2D, (Cell)null);
                                 return true;
                             }
                         }
@@ -966,7 +1022,7 @@ namespace Kermalis.SudokuSolver.Core
                     }
                     if (puzzle.ChangeCandidates(cells, Utils.OneToNine.Except(candidates)))
                     {
-                        puzzle.LogAction("Hidden " + _tupleStr[amount], cells, candidates);
+                        puzzle.LogAction(Puzzle.TechniqueFormat("Hidden " + _tupleStr[amount], "{0}: {1}", cells.Print(), candidates.Print()), cells, (Cell)null);
                         return true;
                     }
                 }
@@ -999,7 +1055,7 @@ namespace Kermalis.SudokuSolver.Core
                     {
                         if (puzzle.ChangeCandidates(indexes.Select(i => region[i].GetCellsVisible()).IntersectAll(), combo))
                         {
-                            puzzle.LogAction("Naked " + _tupleStr[amount], cells, combo);
+                            puzzle.LogAction(Puzzle.TechniqueFormat("Naked " + _tupleStr[amount], "{0}: {1}", cells.Print(), combo.Print()), cells, (Cell)null);
                             return true;
                         }
                     }

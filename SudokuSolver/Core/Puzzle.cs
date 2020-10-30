@@ -190,35 +190,11 @@ namespace Kermalis.SudokuSolver.Core
             }
         }
 
-        private string TechniqueFormat(string technique, string format, params object[] args)
+        public static string TechniqueFormat(string technique, string format, params object[] args)
         {
             return string.Format(string.Format("{0,-20}", technique) + format, args);
         }
 
-        public void LogAction(string technique, Cell culprit, int candidate)
-        {
-            LogAction(technique, culprit, "{0}: {1}", culprit.ToString(), candidate.ToString());
-        }
-        public void LogAction(string technique, IEnumerable<Cell> culprits, int candidate)
-        {
-            LogAction(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidate.ToString());
-        }
-        public void LogAction(string technique, Cell culprit, IEnumerable<int> candidates)
-        {
-            LogAction(technique, culprit, "{0}: {1}", culprit.ToString(), candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
-        }
-        public void LogAction(string technique, IEnumerable<Cell> culprits, IEnumerable<int> candidates)
-        {
-            LogAction(technique, culprits, "{0}: {1}", culprits.Count() == 1 ? culprits.ElementAt(0).ToString() : culprits.Print(), candidates.Count() == 1 ? candidates.ElementAt(0).ToString() : candidates.Print());
-        }
-        public void LogAction(string technique, Cell culprit, string format, params object[] args)
-        {
-            LogAction(TechniqueFormat(technique, format, args), culprit);
-        }
-        public void LogAction(string technique, IEnumerable<Cell> culprits, string format, params object[] args)
-        {
-            LogAction(TechniqueFormat(technique, format, args), culprits);
-        }
         public void LogAction(string action)
         {
             for (int x = 0; x < 9; x++)
@@ -226,31 +202,55 @@ namespace Kermalis.SudokuSolver.Core
                 for (int y = 0; y < 9; y++)
                 {
                     Cell cell = this[x, y];
-                    cell.CreateSnapshot(false);
+                    cell.CreateSnapshot(false, false);
                 }
             }
             Actions.Add(action);
         }
-        public void LogAction(string action, Cell culprit)
+        public void LogAction(string action, Cell culprit, Cell semiCulprit)
         {
             for (int x = 0; x < 9; x++)
             {
                 for (int y = 0; y < 9; y++)
                 {
                     Cell cell = this[x, y];
-                    cell.CreateSnapshot(culprit == cell);
+                    cell.CreateSnapshot(culprit == cell, semiCulprit == cell);
                 }
             }
             Actions.Add(action);
         }
-        public void LogAction(string action, IEnumerable<Cell> culprits)
+        public void LogAction(string action, IEnumerable<Cell> culprits, Cell semiCulprit)
         {
             for (int x = 0; x < 9; x++)
             {
                 for (int y = 0; y < 9; y++)
                 {
                     Cell cell = this[x, y];
-                    cell.CreateSnapshot(culprits != null && culprits.Contains(cell));
+                    cell.CreateSnapshot(culprits != null && culprits.Contains(cell), semiCulprit == cell);
+                }
+            }
+            Actions.Add(action);
+        }
+        public void LogAction(string action, Cell culprit, IEnumerable<Cell> semiCulprits)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = this[x, y];
+                    cell.CreateSnapshot(culprit == cell, semiCulprits != null && semiCulprits.Contains(cell));
+                }
+            }
+            Actions.Add(action);
+        }
+        public void LogAction(string action, IEnumerable<Cell> culprits, IEnumerable<Cell> semiCulprits)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    Cell cell = this[x, y];
+                    cell.CreateSnapshot(culprits != null && culprits.Contains(cell), semiCulprits != null && semiCulprits.Contains(cell));
                 }
             }
             Actions.Add(action);

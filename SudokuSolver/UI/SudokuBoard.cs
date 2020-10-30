@@ -15,8 +15,10 @@ namespace Kermalis.SudokuSolver.UI
         private readonly Brush _changedText = Brushes.DodgerBlue,
             _candidateText = Brushes.Crimson,
             _culpritChangedHighlight = Brushes.Plum,
-            _culpritHighlight = Brushes.PaleTurquoise,
-            _changedHighlight = Brushes.PeachPuff;
+            _culpritHighlight = Brushes.Pink,
+            _semiCulpritChangedHighlight = Brushes.CornflowerBlue,
+            _semiCulpritHighlight = Brushes.Aquamarine,
+            _changedHighlight = Brushes.Cornsilk;
 
         public delegate void CellChangedEventHandler(Cell cell);
         public event CellChangedEventHandler CellChanged;
@@ -102,17 +104,33 @@ namespace Kermalis.SudokuSolver.UI
                             exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
                         var rect = new RectangleF(xoff + SpaceBeforeGrid + 1 + xxoff, yoff + SpaceBeforeGrid + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
                         bool changed = _snapshotIndex - 1 >= 0 && !new HashSet<int>(s.Candidates).SetEquals(_puzzle[x, y].Snapshots[_snapshotIndex - 1].Candidates);
-                        if (s.IsCulprit && changed)
+                        Brush brush = null;
+                        if (changed)
                         {
-                            e.Graphics.FillRectangle(_culpritChangedHighlight, rect);
+                            if (s.IsCulprit)
+                            {
+                                brush = _culpritChangedHighlight;
+                            }
+                            else if (s.IsSemiCulprit)
+                            {
+                                brush = _semiCulpritChangedHighlight;
+                            }
+                            else
+                            {
+                                brush = _changedHighlight;
+                            }
                         }
                         else if (s.IsCulprit)
                         {
-                            e.Graphics.FillRectangle(_culpritHighlight, rect);
+                            brush = _culpritHighlight;
                         }
-                        else if (changed)
+                        else if (s.IsSemiCulprit)
                         {
-                            e.Graphics.FillRectangle(_changedHighlight, rect);
+                            brush = _semiCulpritHighlight;
+                        }
+                        if (brush != null)
+                        {
+                            e.Graphics.FillRectangle(brush, rect);
                         }
                     }
 
@@ -162,7 +180,7 @@ namespace Kermalis.SudokuSolver.UI
             if (e != null && ((e.KeyChar == '0' && _selectedCell.Value != 0) || (e.KeyChar > '0' && e.KeyChar <= '9')))
             {
                 _selectedCell.ChangeOriginalValue(e.KeyChar - '0');
-                _puzzle.LogAction("Changed cell", _selectedCell, _selectedCell.ToString());
+                _puzzle.LogAction(Puzzle.TechniqueFormat("Changed cell", _selectedCell.ToString()), _selectedCell, (Cell)null);
                 CellChanged?.Invoke(_selectedCell);
             }
             _selectedCell = null;
