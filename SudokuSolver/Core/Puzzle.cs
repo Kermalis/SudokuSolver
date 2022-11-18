@@ -118,6 +118,11 @@ internal sealed class Puzzle
 		}
 
 		int[][] board = new int[9][];
+		for (int col = 0; col < 9; col++)
+		{
+			board[col] = new int[9];
+		}
+
 		for (int i = 0; i < 9; i++)
 		{
 			string line = fileLines[i];
@@ -126,7 +131,6 @@ internal sealed class Puzzle
 				throw new InvalidDataException($"Row {i} must have 9 values.");
 			}
 
-			board[i] = new int[9];
 			for (int j = 0; j < 9; j++)
 			{
 				if (int.TryParse(line[j].ToString(), out int value)) // Anything can represent Cell.EMPTY_VALUE
