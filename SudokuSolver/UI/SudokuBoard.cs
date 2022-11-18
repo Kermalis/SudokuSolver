@@ -9,6 +9,7 @@ namespace Kermalis.SudokuSolver.UI;
 internal sealed class SudokuBoard : UserControl
 {
 	private const int SPACE_BEFORE_GRID = 20;
+	private const int NO_SNAPSHOT = -1;
 
 	private readonly Brush _changedText = Brushes.DodgerBlue;
 	private readonly Brush _candidateText = Brushes.Crimson;
@@ -28,7 +29,7 @@ internal sealed class SudokuBoard : UserControl
 
 	public SudokuBoard()
 	{
-		_snapshotIndex = -1;
+		_snapshotIndex = NO_SNAPSHOT;
 
 		SuspendLayout();
 		AutoScaleMode = AutoScaleMode.Font;
@@ -83,7 +84,7 @@ internal sealed class SudokuBoard : UserControl
 				int val = _puzzle[x, y].Value;
 				IEnumerable<int> candidates = _puzzle[x, y].Candidates;
 
-				if (_snapshotIndex >= 0 && _snapshotIndex < _puzzle[x, y].Snapshots.Count)
+				if (_snapshotIndex != NO_SNAPSHOT && _snapshotIndex < _puzzle[x, y].Snapshots.Count)
 				{
 					CellSnapshot s = _puzzle[x, y].Snapshots[_snapshotIndex];
 					val = s.Value;
@@ -146,9 +147,14 @@ internal sealed class SudokuBoard : UserControl
 
 	private Cell? GetCellFromMouseLocation(Point location)
 	{
-		return (_puzzle is null || !_puzzle.IsCustom || location.X < SPACE_BEFORE_GRID || location.Y < SPACE_BEFORE_GRID)
-			? null
-			: _puzzle[(location.X - SPACE_BEFORE_GRID) / ((Width - SPACE_BEFORE_GRID) / 9), (location.Y - SPACE_BEFORE_GRID) / ((Height - SPACE_BEFORE_GRID) / 9)];
+		if (_puzzle is null || !_puzzle.IsCustom || location.X < SPACE_BEFORE_GRID || location.Y < SPACE_BEFORE_GRID)
+		{
+			return null;
+		}
+
+		int col = (location.X - SPACE_BEFORE_GRID) / ((Width - SPACE_BEFORE_GRID) / 9);
+		int row = (location.Y - SPACE_BEFORE_GRID) / ((Height - SPACE_BEFORE_GRID) / 9);
+		return _puzzle[col, row];
 	}
 
 	private void SudokuBoard_MouseMove(object? sender, MouseEventArgs e)
@@ -192,7 +198,7 @@ internal sealed class SudokuBoard : UserControl
 	{
 		ReDraw(_showCandidates);
 	}
-	public void ReDraw(bool showCandidates, int snapshot = -1)
+	public void ReDraw(bool showCandidates, int snapshot = NO_SNAPSHOT)
 	{
 		_showCandidates = showCandidates;
 		_snapshotIndex = snapshot;
