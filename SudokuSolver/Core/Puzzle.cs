@@ -15,6 +15,7 @@ internal sealed class Puzzle
 
 	public readonly BindingList<string> Actions;
 	public readonly bool IsCustom;
+	/// <summary>Stored as x,y (col,row)</summary>
 	private readonly Cell[][] _board;
 
 	public Cell this[int x, int y] => _board[x][y];
@@ -67,7 +68,7 @@ internal sealed class Puzzle
 			blocks[i] = new Region(cells);
 		}
 
-		Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new ReadOnlyCollection<Region>[]
+		Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new ReadOnlyCollection<Region>[3]
 		{
 			Rows = new ReadOnlyCollection<Region>(rows),
 			Columns = new ReadOnlyCollection<Region>(columns),

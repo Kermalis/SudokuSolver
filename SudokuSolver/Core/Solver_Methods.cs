@@ -27,13 +27,13 @@ internal sealed partial class Solver
 								{
 									int[] candidates = new int[] { value1, value2 };
 									var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
-									if (cells.Any(c => c.OriginalValue != 0))
+									if (cells.Any(c => c.OriginalValue != Cell.EMPTY_VALUE))
 									{
 										continue;
 									}
 
-									IEnumerable<Cell> alreadySet = cells.Where(c => c.Value != 0),
-											notSet = cells.Where(c => c.Value == 0);
+									IEnumerable<Cell> alreadySet = cells.Where(c => c.Value != Cell.EMPTY_VALUE),
+											notSet = cells.Where(c => c.Value == Cell.EMPTY_VALUE);
 
 									switch (type)
 									{
@@ -65,8 +65,8 @@ internal sealed partial class Solver
 										foreach (int i in candidates)
 										{
 											int otherVal = candidates.Single(ca => ca != i);
-											if (((pair[0].Value == i && pair[1].Value == 0 && pair[1].Candidates.Count == 2 && pair[1].Candidates.Contains(i))
-												|| (pair[1].Value == i && pair[0].Value == 0 && pair[0].Candidates.Count == 2 && pair[0].Candidates.Contains(i)))
+											if (((pair[0].Value == i && pair[1].Value == Cell.EMPTY_VALUE && pair[1].Candidates.Count == 2 && pair[1].Candidates.Contains(i))
+												|| (pair[1].Value == i && pair[0].Value == Cell.EMPTY_VALUE && pair[0].Candidates.Count == 2 && pair[0].Candidates.Contains(i)))
 												&& otherPair.All(c => c.Value == otherVal || (c.Candidates.Count == 2 && c.Candidates.Contains(otherVal))))
 											{
 												goto breakpairs;

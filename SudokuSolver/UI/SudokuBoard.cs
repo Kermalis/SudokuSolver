@@ -39,7 +39,7 @@ internal sealed class SudokuBoard : UserControl
 		MouseMove += SudokuBoard_MouseMove;
 		MouseClick += SudokuBoard_Click;
 		KeyPress += SudokuBoard_KeyPress;
-		LostFocus += (sender, e) => SudokuBoard_KeyPress(sender, null);
+		LostFocus += SudokuBoard_LostFocus;
 		Resize += SudokuBoard_Resize;
 		ResumeLayout(false);
 	}
@@ -162,21 +162,30 @@ internal sealed class SudokuBoard : UserControl
 		ReDraw(false);
 	}
 
-	private void SudokuBoard_KeyPress(object? sender, KeyPressEventArgs? e)
+	private void SudokuBoard_KeyPress(object? sender, KeyPressEventArgs e)
 	{
 		if (_selectedCell is null)
 		{
 			return;
 		}
 
-		if (e is not null && ((e.KeyChar == '0' && _selectedCell.Value != 0) || (e.KeyChar > '0' && e.KeyChar <= '9')))
+		if ((e.KeyChar == '0' && _selectedCell.Value != Cell.EMPTY_VALUE) || (e.KeyChar > '0' && e.KeyChar <= '9'))
 		{
 			_selectedCell.ChangeOriginalValue(e.KeyChar - '0');
 			_puzzle!.LogAction(Puzzle.TechniqueFormat("Changed cell", _selectedCell.ToString()), _selectedCell, (Cell?)null);
 			CellChanged?.Invoke(_selectedCell);
 		}
+
 		_selectedCell = null;
 		ReDraw(false);
+	}
+	private void SudokuBoard_LostFocus(object? sender, EventArgs e)
+	{
+		if (_selectedCell is not null)
+		{
+			_selectedCell = null;
+			ReDraw(false);
+		}
 	}
 
 	private void SudokuBoard_Resize(object? sender, EventArgs e)

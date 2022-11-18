@@ -139,7 +139,7 @@ internal sealed class Cell
 	public string DebugString()
 	{
 		string s = Point.ToString() + " ";
-		if (Value == 0)
+		if (Value == EMPTY_VALUE)
 		{
 			s += "has candidates: " + Candidates.Print();
 		}
