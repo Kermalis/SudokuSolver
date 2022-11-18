@@ -597,7 +597,7 @@ namespace Kermalis.SudokuSolver.Core
                                 IEnumerable<Cell> c3Sees = c3.GetCellsVisible().Except(region)
                                     .Where(c => c.Candidates.Count == 2 // If it has 2 candidates
                                     && c.Candidates.Intersect(c3.Candidates).Count() == 2 // Shares them both with p3
-                                    && c.Candidates.Intersect(c3.Candidates).Count() == 1); // And shares one with p2
+                                    && c.Candidates.Intersect(c2.Candidates).Count() == 1); // And shares one with p2
                                 foreach (Cell c2_2 in c3Sees)
                                 {
                                     IEnumerable<Cell> allSee = c2.GetCellsVisible().Intersect(c3.GetCellsVisible()).Intersect(c2_2.GetCellsVisible());
