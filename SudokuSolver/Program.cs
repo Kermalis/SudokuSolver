@@ -2,16 +2,15 @@
 using System;
 using System.Windows.Forms;
 
-namespace Kermalis.SudokuSolver
+namespace Kermalis.SudokuSolver;
+
+internal static class Program
 {
-    internal static class Program
-    {
-        [STAThread]
-        private static void Main()
-        {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainWindow());
-        }
-    }
+	[STAThread]
+	private static void Main()
+	{
+		Application.EnableVisualStyles();
+		Application.SetCompatibleTextRenderingDefault(false);
+		Application.Run(new MainWindow());
+	}
 }
