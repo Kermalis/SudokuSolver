@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -27,7 +26,7 @@ public sealed class Cell
 	public ReadOnlyCollection<Cell> VisibleCells { get; private set; }
 
 	public int Value { get; private set; }
-	public HashSet<int> Candidates { get; }
+	public Candidates Candidates { get; }
 
 	public List<CellSnapshot> Snapshots { get; }
 
@@ -39,7 +38,7 @@ public sealed class Cell
 		Value = value;
 		Point = point;
 
-		Candidates = new HashSet<int>(Utils.OneToNine);
+		Candidates = new Candidates();
 		Snapshots = [];
 
 		// Will be set in InitRegions
@@ -86,16 +85,12 @@ public sealed class Cell
 	}
 
 	// TODO: Remove
-	public bool ChangeCandidates(int candidate, bool remove = true)
-	{
-		return remove ? Candidates.Remove(candidate) : Candidates.Add(candidate);
-	}
 	internal bool ChangeCandidates(IEnumerable<int> candidates, bool remove = true)
 	{
 		bool changed = false;
 		foreach (int candidate in candidates)
 		{
-			if (remove ? Candidates.Remove(candidate) : Candidates.Add(candidate))
+			if (Candidates.Set(candidate, !remove))
 			{
 				changed = true;
 			}
@@ -107,7 +102,7 @@ public sealed class Cell
 		bool changed = false;
 		foreach (Cell cell in cells)
 		{
-			if (remove ? cell.Candidates.Remove(candidate) : cell.Candidates.Add(candidate))
+			if (cell.Candidates.Set(candidate, !remove))
 			{
 				changed = true;
 			}
@@ -121,7 +116,7 @@ public sealed class Cell
 		{
 			foreach (int candidate in candidates)
 			{
-				if (remove ? cell.Candidates.Remove(candidate) : cell.Candidates.Add(candidate))
+				if (cell.Candidates.Set(candidate, !remove))
 				{
 					changed = true;
 				}
@@ -141,13 +136,13 @@ public sealed class Cell
 		{
 			for (int i = 1; i <= 9; i++)
 			{
-				Candidates.Add(i);
+				Candidates.Set(i, true);
 			}
 			ChangeCandidates(VisibleCells, oldValue, remove: false);
 		}
 		else
 		{
-			Candidates.Clear();
+			Candidates.Clear(false);
 			ChangeCandidates(VisibleCells, newValue);
 		}
 
@@ -166,14 +161,10 @@ public sealed class Cell
 		OriginalValue = value;
 		Set(value, refreshOtherCellCandidates: true);
 	}
-	/*internal void CreateSnapshot(bool isCulprit, bool isSemiCulprit)
-	{
-		Span<int> cache = stackalloc int[9];
-		Snapshots.Add(new CellSnapshot(Value, new ReadOnlyCollection<int>(Candidates.AsInt(cache).ToArray()), isCulprit, isSemiCulprit));
-	}*/
 	internal void CreateSnapshot(bool isCulprit, bool isSemiCulprit)
 	{
-		Snapshots.Add(new CellSnapshot(Value, new ReadOnlyCollection<int>(Candidates.ToArray()), isCulprit, isSemiCulprit));
+		Span<int> cache = stackalloc int[9]; // Don't just make an array of 9 since we may not use all of slots
+		Snapshots.Add(new CellSnapshot(Value, new ReadOnlyCollection<int>(Candidates.AsInt(cache).ToArray()), isCulprit, isSemiCulprit));
 	}
 
 	public override int GetHashCode()

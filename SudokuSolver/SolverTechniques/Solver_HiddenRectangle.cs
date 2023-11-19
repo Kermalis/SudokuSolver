@@ -53,7 +53,7 @@ partial class Solver
 											}
 											else
 											{
-												diag.ChangeCandidates(i == value1 ? value2 : value1);
+												diag.Candidates.Set(i == value1 ? value2 : value1, false);
 											}
 											changed = true;
 										}

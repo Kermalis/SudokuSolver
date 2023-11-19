@@ -86,7 +86,7 @@ partial class Solver
 											}
 											else
 											{
-												cell.ChangeCandidates(cell.Candidates.Intersect(candidates));
+												cell.Candidates.Set(cell.Candidates.Intersect(candidates), false);
 											}
 											changed = true;
 											break;

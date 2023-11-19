@@ -97,7 +97,7 @@ public sealed class Puzzle
 				Cell cell = _board[col][row];
 				for (int i = 1; i <= 9; i++)
 				{
-					cell.Candidates.Add(i);
+					cell.Candidates.Set(i, true);
 				}
 			}
 		}

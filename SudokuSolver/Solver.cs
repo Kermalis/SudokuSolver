@@ -111,21 +111,8 @@ public sealed partial class Solver
 
 				// Empty cell... check for naked single
 				solved = false;
-				/*if (cell.Candidates.TryGetCount1(out int nakedSingle))
+				if (cell.Candidates.TryGetCount1(out int nakedSingle))
 				{
-					cell.Set(nakedSingle);
-
-					string action = TechniqueFormat("Naked single", "{0}: {1}",
-						cell, nakedSingle);
-					LogAction(action, cell);
-
-					changed = true;
-					goto again; // Restart the search for naked singles since we have the potential to create new ones
-				}*/
-				HashSet<int> a = cell.Candidates;
-				if (a.Count == 1)
-				{
-					int nakedSingle = a.ElementAt(0);
 					cell.Set(nakedSingle);
 
 					string action = TechniqueFormat("Naked single", "{0}: {1}",
