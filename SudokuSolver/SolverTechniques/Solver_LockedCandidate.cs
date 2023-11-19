@@ -6,6 +6,12 @@ partial class Solver
 {
 	private bool LockedCandidate()
 	{
+		// A locked candidate is when a row or column has a candidate that can only appear in one block.
+		// For example, if a row has 3 cells with "5" as a candidate, and all 3 of those cells are in the same block, then that block can only have "5" in that row.
+		// Other cells in that block cannot have "5", so we clear candidates that way.
+
+		// Our search will iterate each row and column and check for these conditions on each digit.
+
 		for (int i = 0; i < 9; i++)
 		{
 			for (int candidate = 1; candidate <= 9; candidate++)
@@ -22,30 +28,37 @@ partial class Solver
 
 	private bool LockedCandidate_Find(int i, int candidate, bool doRows)
 	{
+		// Grab the row or column we will scan.
 		Region region = (doRows ? Puzzle.Rows : Puzzle.Columns)[i];
 
+		// Grab the cells in this row/col that still have the candidate we're looking for.
 		Span<Cell> cellsWithCandidates = _cellCache.AsSpan(0, 9);
 		cellsWithCandidates = region.GetCellsWithCandidate(candidate, cellsWithCandidates);
 
-		// Even if a block only has these candidates for this "i" value, it'd be slower to check that before cancelling "BlacklistCandidates"
+		// If there are 2 or 3 cells with the candidate, we will check to see if they share a block.
 		if (cellsWithCandidates.Length is not 2 and not 3)
 		{
 			return false;
 		}
 
+		// Check which blocks the cells belong to.
 		Span<int> blockIndices = _intCache.AsSpan(0, cellsWithCandidates.Length);
 		blockIndices = Utils.GetDistinctBlockIndices(cellsWithCandidates, blockIndices);
 
+		// If they are in the same block, we can remove the candidate from other cells in the block.
 		if (blockIndices.Length != 1)
 		{
 			return false;
 		}
 
+		// Grab the block they're in.
 		int blockIndex = blockIndices[0];
 		Region block = Puzzle.Blocks[blockIndex];
 
-		Span<Cell> cellsToChange = _cellCache.AsSpan(9, 9);
-		cellsToChange = block.Except(cellsWithCandidates, cellsToChange);
+		// Grab the cells in the block that don't belong to the col/row we scanned. They cannot have this candidate.
+		// Up to 6 cells can have candidates changed.
+		Span<Cell> cellsToChange = _cellCache.AsSpan(cellsWithCandidates.Length, 6);
+		cellsToChange = block.Except(region, cellsToChange);
 
 		if (Candidates.Set(cellsToChange, candidate, false))
 		{

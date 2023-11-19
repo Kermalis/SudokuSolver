@@ -164,11 +164,11 @@ internal static class Utils
 		}
 		return -1;
 	}
-	public static int SimpleIndexOf(this ReadOnlySpan<int> candidates, int can)
+	public static int SimpleIndexOf(this ReadOnlySpan<int> source, int value)
 	{
-		for (int i = 0; i < candidates.Length; i++)
+		for (int i = 0; i < source.Length; i++)
 		{
-			if (candidates[i] == can)
+			if (source[i] == value)
 			{
 				return i;
 			}

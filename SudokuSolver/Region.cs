@@ -103,6 +103,21 @@ public sealed class Region : IEnumerable<Cell>
 		}
 		return cache.Slice(0, retLength);
 	}
+	/// <summary>Returns all cells except for the ones in <paramref name="other"/>.
+	/// Result length is [0,9]</summary>
+	internal Span<Cell> Except(Region other, Span<Cell> cache)
+	{
+		int retLength = 0;
+		for (int i = 0; i < 9; i++)
+		{
+			Cell c = _cells[i];
+			if (Array.IndexOf(other._cells, c) == -1)
+			{
+				cache[retLength++] = c;
+			}
+		}
+		return cache.Slice(0, retLength);
+	}
 
 	internal bool CheckForDuplicateValue(int val)
 	{

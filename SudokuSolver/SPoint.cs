@@ -52,5 +52,4 @@ public readonly struct SPoint
 	{
 		return RowLetter(Row) + ColumnLetter(Column);
 	}
-
 }

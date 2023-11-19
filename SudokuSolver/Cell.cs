@@ -163,7 +163,7 @@ public sealed class Cell
 	}
 	internal void CreateSnapshot(bool isCulprit, bool isSemiCulprit)
 	{
-		Span<int> cache = stackalloc int[9]; // Don't just make an array of 9 since we may not use all of slots
+		Span<int> cache = stackalloc int[9]; // Don't just make an array of 9 since we may not use all of the slots
 		Snapshots.Add(new CellSnapshot(Value, new ReadOnlyCollection<int>(Candidates.AsInt(cache).ToArray()), isCulprit, isSemiCulprit));
 	}
 
