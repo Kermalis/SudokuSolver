@@ -5,8 +5,8 @@ Because it logs the human techniques it uses, you can learn how to get past obst
 
 ![Success](Showcase/Success.gif)
 
-It is designed with speed in mind, but there are still many improvements to be had.
-The program has been updated to .NET 7.0, but I'm not actively working on the program.
+It is designed with speed in mind, but there are still many improvements to be had (span etc).
+The program has been updated to .NET 8.0, but I'm not actively working on the program.
 The goal was to write each technique before optimizing further.
 
 The form draws the puzzle and its changes.
@@ -22,4 +22,3 @@ Big thanks to http://hodoku.sourceforge.net and http://www.sudokuwiki.org for pr
 
 * A way to toggle techniques and logging with the UI
 * Remaining techniques
-* Unit tests

@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace Kermalis.SudokuSolver.UI;
 
-internal sealed partial class MainWindow : Form // TODO: Readme, alloc, tests, fix custom puzzle
+internal sealed partial class MainWindow : Form // TODO: Alloc, fix custom puzzle crash
 {
 	private Solver? _solver;
 

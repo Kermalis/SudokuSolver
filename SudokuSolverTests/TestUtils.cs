@@ -5,10 +5,10 @@ using Xunit.Abstractions;
 
 namespace Kermalis.SudokuSolver.Tests;
 
-[CollectionDefinition("Utils")]
+[CollectionDefinition(DEF)]
 public sealed class TestUtilsCollection : ICollectionFixture<TestUtils>
 {
-	//
+	internal const string DEF = "Utils";
 }
 
 public sealed class TestUtils
@@ -28,10 +28,11 @@ public sealed class TestUtils
 		solver.Actions.ListChanged += Actions_ListChanged;
 		return solver;
 	}
-	public void AssertSolvedCorrectly(Solver solver)
+	public void AssertSolvedCorrectly(Solver solver, string technique)
 	{
 		Assert.True(solver.TrySolve());
 		Assert.False(solver.Puzzle.CheckForErrors());
+		Assert.Contains(solver.Actions, a => a.StartsWith(technique, StringComparison.OrdinalIgnoreCase));
 
 		_output.WriteLine(string.Empty);
 		_output.WriteLine(solver.Puzzle.ToStringFancy());
