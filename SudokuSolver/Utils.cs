@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 
 namespace Kermalis.SudokuSolver;
 
@@ -9,6 +10,7 @@ internal static class Utils
 {
 	public static ReadOnlyCollection<int> OneToNine { get; } = new ReadOnlyCollection<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
 	public static ReadOnlySpan<int> OneToNineSpan => new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	private static readonly StringBuilder _sb = new();
 
 	/// <summary>outCol must be 3 length</summary>
 	public static void GetColumnInBlock(this Cell[] block, int x, Span<Cell> outCol)
@@ -110,20 +112,46 @@ internal static class Utils
 	}
 	public static string Print<T>(this IEnumerable<T> source)
 	{
-		return "( " + string.Join(", ", source) + " )";
+		return _sb.Clear()
+			.Append("( ")
+			.AppendJoin(", ", source)
+			.Append(" )")
+			.ToString();
 	}
-	public static string Print<T>(this T[] source)
+	public static string PrintCells(ReadOnlySpan<Cell> cells)
 	{
-		return "( " + string.Join(", ", source) + " )"; // TODO: Deal with span allocs here. Have PrintCandidates and PrintCells
-	}
-	/*public static string PrintCells(ReadOnlySpan<Cell> cells)
-	{
+		_sb.Clear()
+			.Append("( ");
 
+		for (int i = 0; i < cells.Length; i++)
+		{
+			if (i != 0)
+			{
+				_sb.Append(", ");
+			}
+			_sb.Append(cells[i].ToString());
+		}
+
+		return _sb.Append(" )")
+			.ToString();
 	}
 	public static string PrintCandidates(ReadOnlySpan<int> candidates)
 	{
+		_sb.Clear()
+			.Append("( ");
 
-	}*/
+		for (int i = 0; i < candidates.Length; i++)
+		{
+			if (i != 0)
+			{
+				_sb.Append(", ");
+			}
+			_sb.Append(candidates[i]);
+		}
+
+		return _sb.Append(" )")
+			.ToString();
+	}
 
 	public static int SimpleIndexOf(this ReadOnlySpan<Cell> cells, Cell cell)
 	{
@@ -146,5 +174,20 @@ internal static class Utils
 			}
 		}
 		return -1;
+	}
+
+	/// <summary>Result length is [1, 9]. If there are only 2 cells for example, then it's [1, 2]</summary>
+	public static Span<int> GetDistinctBlockIndices(ReadOnlySpan<Cell> cells, Span<int> cache)
+	{
+		int retLength = 0;
+		foreach (Cell c in cells)
+		{
+			int blockIndex = c.Point.BlockIndex;
+			if (retLength == 0 || SimpleIndexOf(cache.Slice(0, retLength), blockIndex) == -1)
+			{
+				cache[retLength++] = blockIndex;
+			}
+		}
+		return cache.Slice(0, retLength);
 	}
 }

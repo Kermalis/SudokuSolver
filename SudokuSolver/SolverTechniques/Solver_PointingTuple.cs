@@ -50,10 +50,11 @@ partial class Solver
 
 					if (changed)
 					{
-						Cell[] culprits = doRows ? blockrow[r].GetRowInBlock(rcIndex) : blockcol[r].GetColumnInBlock(rcIndex);
+						ReadOnlySpan<Cell> culprits = doRows ? blockrow[r].GetRowInBlock(rcIndex) : blockcol[r].GetColumnInBlock(rcIndex);
 						LogAction(TechniqueFormat("Pointing tuple",
 							"Starting in block{0} {1}'s {2} block, {3} {0}: {4}",
-							doRows ? "row" : "column", i + 1, OrdinalStr[r + 1], OrdinalStr[rcIndex + 1], candidates.SingleOrMultiToString()), culprits);
+							doRows ? "row" : "column", i + 1, OrdinalStr[r + 1], OrdinalStr[rcIndex + 1], candidates.SingleOrMultiToString()),
+							culprits);
 					}
 					return changed;
 				}

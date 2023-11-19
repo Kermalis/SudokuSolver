@@ -179,7 +179,6 @@ public sealed partial class Solver
 		}
 		Actions.Add(action);
 	}
-	/*// TODO: Remove .AsSpan() and (Cell?)null from callers
 	private void LogAction(string action, ReadOnlySpan<Cell> culprits)
 	{
 		for (int col = 0; col < 9; col++)
@@ -227,7 +226,7 @@ public sealed partial class Solver
 			}
 		}
 		Actions.Add(action);
-	}*/
+	}
 	public void LogAction(string action, IEnumerable<Cell> culprits)
 	{
 		for (int col = 0; col < 9; col++)

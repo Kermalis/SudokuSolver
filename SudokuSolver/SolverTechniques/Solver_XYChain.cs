@@ -36,16 +36,16 @@ partial class Solver
 		IEnumerable<Cell> visible = currentCell.VisibleCells.Except(ignore);
 		foreach (Cell cell in visible)
 		{
-			if (cell.Candidates.Count != 2)
+			if (!cell.Candidates.TryGetCount2(out int can1, out int can2))
 			{
 				continue; // Must have two candidates
 			}
-			if (!cell.Candidates.Contains(mustFind))
+			if (can1 != mustFind && can2 != mustFind)
 			{
 				continue; // Must have "mustFind"
 			}
 
-			int otherCandidate = cell.Candidates.Except([mustFind]).Single();
+			int otherCandidate = mustFind == can1 ? can2 : can1;
 			// Check end condition
 			if (otherCandidate == theOneThatWillEndItAllBaybee && startCell != currentCell)
 			{
@@ -57,7 +57,10 @@ partial class Solver
 					{
 						ignore.Remove(startCell); // Remove here because we're now using "ignore" as "semiCulprits" and exiting
 						Cell[] culprits = [startCell, cell];
-						LogAction(TechniqueFormat("XY-Chain", "{0}-{1}: {2}", culprits.Print(), ignore.SingleOrMultiToString(), theOneThatWillEndItAllBaybee), culprits, ignore);
+						LogAction(TechniqueFormat("XY-Chain",
+							"{0}-{1}: {2}",
+							Utils.PrintCells(culprits), ignore.SingleOrMultiToString(), theOneThatWillEndItAllBaybee),
+							culprits, ignore);
 						return true;
 					}
 				}

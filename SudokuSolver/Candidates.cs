@@ -237,7 +237,7 @@ public sealed class Candidates : IEnumerable<int>
 	public string Print()
 	{
 		Span<int> span = stackalloc int[9];
-		return "( " + string.Join(", ", AsInt(span).ToArray()) + " )";
+		return Utils.PrintCandidates(AsInt(span));
 	}
 	/// <summary>Returns true if <paramref name="other"/> has the same candidates as <c>this</c></summary>
 	public bool SetEquals(Candidates other)

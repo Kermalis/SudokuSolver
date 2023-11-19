@@ -62,7 +62,10 @@ partial class Solver
 			{
 				if (Cell.ChangeCandidates(indexes.Select(i => region[i].VisibleCells).IntersectAll(), combo))
 				{
-					LogAction(TechniqueFormat("Naked " + TupleStr[amount], "{0}: {1}", cells.Print(), combo.Print()), cells);
+					LogAction(TechniqueFormat("Naked " + TupleStr[amount],
+						"{0}: {1}",
+						Utils.PrintCells(cells), combo.Print()),
+						(ReadOnlySpan<Cell>)cells);
 					return true;
 				}
 			}

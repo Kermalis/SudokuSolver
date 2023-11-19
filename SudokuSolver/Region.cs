@@ -37,7 +37,7 @@ public sealed class Region : IEnumerable<Cell>
 		return -1;
 	}
 
-	/*/// <summary>Result length is [0,9]</summary>
+	/// <summary>Result length is [0,9]</summary>
 	internal Span<Cell> GetCellsWithCandidate(int candidate, Span<Cell> cache)
 	{
 		int counter = 0;
@@ -50,7 +50,7 @@ public sealed class Region : IEnumerable<Cell>
 			}
 		}
 		return cache.Slice(0, counter);
-	}*/
+	}
 	public IEnumerable<Cell> GetCellsWithCandidate(int candidate)
 	{
 		return _cells.Where(c => c.Candidates.Contains(candidate));
@@ -88,7 +88,7 @@ public sealed class Region : IEnumerable<Cell>
 		return counter;
 	}
 
-	/*/// <summary>Returns all cells except for the ones in <paramref name="other"/>.
+	/// <summary>Returns all cells except for the ones in <paramref name="other"/>.
 	/// Result length is [0,9]</summary>
 	internal Span<Cell> Except(ReadOnlySpan<Cell> other, Span<Cell> cache)
 	{
@@ -102,7 +102,7 @@ public sealed class Region : IEnumerable<Cell>
 			}
 		}
 		return cache.Slice(0, retLength);
-	}*/
+	}
 
 	internal bool CheckForDuplicateValue(int val)
 	{

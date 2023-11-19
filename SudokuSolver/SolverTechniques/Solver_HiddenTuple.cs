@@ -62,7 +62,7 @@ partial class Solver
 	{
 		if (loop == amount)
 		{
-			IEnumerable<Cell> cells = candidates.Select(c => region.GetCellsWithCandidate(c)).UniteAll();
+			IEnumerable<Cell> cells = candidates.Select(region.GetCellsWithCandidate).UniteAll();
 			IEnumerable<int> cands = cells.Select(c => c.Candidates).UniteAll();
 
 			if (cells.Count() != amount // There aren't "amount" cells for our tuple to be in
@@ -74,7 +74,10 @@ partial class Solver
 
 			if (Cell.ChangeCandidates(cells, Utils.OneToNine.Except(candidates)))
 			{
-				LogAction(TechniqueFormat("Hidden " + TupleStr[amount], "{0}: {1}", cells.Print(), candidates.Print()), cells);
+				LogAction(TechniqueFormat("Hidden " + TupleStr[amount],
+					"{0}: {1}",
+					cells.Print(), Utils.PrintCandidates(candidates)),
+					cells);
 				return true;
 			}
 		}

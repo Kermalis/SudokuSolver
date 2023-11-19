@@ -25,14 +25,14 @@ partial class Solver
 								for (int value2 = value1 + 1; value2 <= 9; value2++)
 								{
 									int[] candidates = [value1, value2];
-									var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
+									Cell[] cells = [c1[y1], c1[y2], c2[y1], c2[y2]];
 									if (cells.Any(c => c.OriginalValue != Cell.EMPTY_VALUE))
 									{
 										continue;
 									}
 
-									IEnumerable<Cell> alreadySet = cells.Where(c => c.Value != Cell.EMPTY_VALUE),
-											notSet = cells.Where(c => c.Value == Cell.EMPTY_VALUE);
+									IEnumerable<Cell> alreadySet = cells.Where(c => c.Value != Cell.EMPTY_VALUE);
+									IEnumerable<Cell> notSet = cells.Where(c => c.Value == Cell.EMPTY_VALUE);
 
 									switch (type)
 									{
@@ -53,11 +53,11 @@ partial class Solver
 											break;
 										}
 									}
-									var pairs = new Cell[][]
-										{
-											new Cell[] { cells[0], cells[3] },
-											new Cell[] { cells[1], cells[2] }
-										};
+									Cell[][] pairs =
+									[
+										[cells[0], cells[3]],
+										[cells[1], cells[2]]
+									];
 									foreach (Cell[] pair in pairs)
 									{
 										Cell[] otherPair = pair == pairs[0] ? pairs[1] : pairs[0];
@@ -105,7 +105,10 @@ partial class Solver
 
 									if (changed)
 									{
-										LogAction(TechniqueFormat("Avoidable rectangle", "{0}: {1}", cells.Print(), candidates.Print()), cells);
+										LogAction(TechniqueFormat("Avoidable rectangle",
+											"{0}: {1}",
+											Utils.PrintCells(cells), Utils.PrintCandidates(candidates)),
+											(ReadOnlySpan<Cell>)cells);
 										return true;
 									}
 								}

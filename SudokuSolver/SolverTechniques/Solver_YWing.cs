@@ -53,8 +53,11 @@ partial class Solver
 						int candidate = cOther.Candidates.Intersect(c3.Candidates).Single(); // Will just be 1 candidate
 						if (Cell.ChangeCandidates(commonCells, candidate))
 						{
-							var culprits = new Cell[] { c1, c2, c3 };
-							LogAction(TechniqueFormat("Y-Wing", "{0}: {1}", culprits.Print(), candidate), culprits);
+							ReadOnlySpan<Cell> culprits = [c1, c2, c3];
+							LogAction(TechniqueFormat("Y-Wing",
+								"{0}: {1}",
+								Utils.PrintCells(culprits), candidate),
+								culprits);
 							return true;
 						}
 					}

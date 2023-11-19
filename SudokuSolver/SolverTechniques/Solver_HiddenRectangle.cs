@@ -23,7 +23,7 @@ partial class Solver
 							for (int value2 = value1 + 1; value2 <= 9; value2++)
 							{
 								int[] candidates = [value1, value2];
-								var cells = new Cell[] { c1[y1], c1[y2], c2[y1], c2[y2] };
+								Cell[] cells = [c1[y1], c1[y2], c2[y1], c2[y2]];
 								if (cells.Any(c => !c.Candidates.ContainsAll(candidates)))
 								{
 									continue;
@@ -61,7 +61,10 @@ partial class Solver
 								}
 								if (changed)
 								{
-									LogAction(TechniqueFormat("Hidden rectangle", "{0}: {1}", cells.Print(), candidates.Print()), cells);
+									LogAction(TechniqueFormat("Hidden rectangle",
+										"{0}: {1}",
+										Utils.PrintCells(cells), Utils.PrintCandidates(candidates)),
+										(ReadOnlySpan<Cell>)cells);
 									return true;
 								}
 							}

@@ -48,8 +48,11 @@ partial class Solver
 
 						if (Cell.ChangeCandidates(allSee, allHave))
 						{
-							Cell[] culprits = [c2, c3, c2_2];
-							LogAction(TechniqueFormat("XYZ-Wing", "{0}: {1}", culprits.Print(), allHave), culprits);
+							ReadOnlySpan<Cell> culprits = [c2, c3, c2_2];
+							LogAction(TechniqueFormat("XYZ-Wing",
+								"{0}: {1}",
+								Utils.PrintCells(culprits), allHave),
+								culprits);
 							changed = true;
 						}
 					}
