@@ -10,10 +10,10 @@ partial class Solver
 
 	private bool PointingTuple()
 	{
+		var blockrow = new Cell[3][];
+		var blockcol = new Cell[3][];
 		for (int i = 0; i < 3; i++)
 		{
-			var blockrow = new Cell[3][];
-			var blockcol = new Cell[3][];
 			for (int r = 0; r < 3; r++)
 			{
 				blockrow[r] = [.. Puzzle.Blocks[r + (i * 3)]];

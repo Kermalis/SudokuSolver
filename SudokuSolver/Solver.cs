@@ -115,9 +115,10 @@ public sealed partial class Solver
 				{
 					cell.Set(nakedSingle);
 
-					string action = TechniqueFormat("Naked single", "{0}: {1}",
-						cell, nakedSingle);
-					LogAction(action, cell);
+					LogAction(TechniqueFormat("Naked single",
+						"{0}: {1}",
+						cell, nakedSingle),
+						cell);
 
 					changed = true;
 					goto again; // Restart the search for naked singles since we have the potential to create new ones

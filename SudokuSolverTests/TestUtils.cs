@@ -46,8 +46,4 @@ public sealed class TestUtils
 			_output.WriteLine(list[e.NewIndex]);
 		}
 	}
-
-	private void Actions_AddingNew(object? sender, AddingNewEventArgs e)
-	{
-	}
 }

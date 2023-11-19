@@ -28,7 +28,7 @@ public sealed class Cell
 	public int Value { get; private set; }
 	public Candidates Candidates { get; }
 
-	public List<CellSnapshot> Snapshots { get; }
+	public List<CellSnapshot> Snapshots { get; } // TODO: Let's have snapshots be part of the solver. Each action will capture the entire board instead.
 
 	internal Cell(Puzzle puzzle, int value, SPoint point)
 	{

@@ -7,19 +7,19 @@ partial class Solver
 {
 	private bool XYChain()
 	{
+		var ignore = new List<Cell>(); // TODO: Alloc
+
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				if (cell.Candidates.Count != 2)
+				if (!cell.Candidates.TryGetCount2(out int start1, out int start2))
 				{
 					continue; // Must have two candidates
 				}
 
-				var ignore = new List<Cell>();
-				int start1 = cell.Candidates.ElementAt(0);
-				int start2 = cell.Candidates.ElementAt(1);
+				ignore.Clear();
 				if (XYChain_Recursion(cell, ignore, cell, start1, start2)
 					|| XYChain_Recursion(cell, ignore, cell, start2, start1))
 				{
