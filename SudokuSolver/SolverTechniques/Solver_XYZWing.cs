@@ -17,11 +17,13 @@ partial class Solver
 		}
 		return false;
 	}
+
 	private bool XYZWing_Find(Region region)
 	{
 		bool changed = false;
 		Cell[] cells2 = region.Where(c => c.Candidates.Count == 2).ToArray();
 		Cell[] cells3 = region.Where(c => c.Candidates.Count == 3).ToArray();
+
 		if (cells2.Length > 0 && cells3.Length > 0)
 		{
 			for (int j = 0; j < cells2.Length; j++)
@@ -43,9 +45,10 @@ partial class Solver
 					{
 						IEnumerable<Cell> allSee = c2.VisibleCells.Intersect(c3.VisibleCells).Intersect(c2_2.VisibleCells);
 						int allHave = c2.Candidates.Intersect(c3.Candidates).Intersect(c2_2.Candidates).Single(); // Will be 1 Length
+
 						if (Cell.ChangeCandidates(allSee, allHave))
 						{
-							var culprits = new Cell[] { c2, c3, c2_2 };
+							Cell[] culprits = [c2, c3, c2_2];
 							LogAction(TechniqueFormat("XYZ-Wing", "{0}: {1}", culprits.Print(), allHave), culprits);
 							changed = true;
 						}

@@ -39,8 +39,8 @@ partial class Solver
 								bool changed = false;
 								foreach (Cell c in l[2])
 								{
-									int eks = c.Point.Column == x1 ? x2 : x1,
-											why = c.Point.Row == y1 ? y2 : y1;
+									int eks = c.Point.Column == x1 ? x2 : x1;
+									int why = c.Point.Row == y1 ? y2 : y1;
 									foreach (int i in candidates)
 									{
 										if (!Puzzle.Rows[why].GetCellsWithCandidate(i).Except(cells).Any() // "i" only appears in our UR

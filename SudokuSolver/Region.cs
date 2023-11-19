@@ -73,7 +73,7 @@ public sealed class Region : IEnumerable<Cell>
 			}
 		}
 		return cache.Slice(0, counter);
-	}
+	}*/
 	internal int CountCellsWithCandidates()
 	{
 		int counter = 0;
@@ -86,7 +86,7 @@ public sealed class Region : IEnumerable<Cell>
 			}
 		}
 		return counter;
-	}*/
+	}
 
 	/*/// <summary>Returns all cells except for the ones in <paramref name="other"/>.
 	/// Result length is [0,9]</summary>

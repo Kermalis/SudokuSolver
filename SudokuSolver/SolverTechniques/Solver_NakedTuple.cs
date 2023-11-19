@@ -50,40 +50,42 @@ partial class Solver
 
 	private bool NakedTuple_Find(Region region, int amount)
 	{
-		bool DoNakedTuples(int loop, Cell[] cells, int[] indexes)
+		return NakedTuple_Recurse(region, amount, 0, new Cell[amount], new int[amount]);
+	}
+	private bool NakedTuple_Recurse(Region region, int amount, int loop, Cell[] cells, int[] indexes)
+	{
+		if (loop == amount)
 		{
-			if (loop == amount)
-			{
-				IEnumerable<int> combo = cells.Select(c => c.Candidates).UniteAll();
-				if (combo.Count() == amount)
-				{
-					if (Cell.ChangeCandidates(indexes.Select(i => region[i].VisibleCells).IntersectAll(), combo))
-					{
-						LogAction(TechniqueFormat("Naked " + TupleStr[amount], "{0}: {1}", cells.Print(), combo.Print()), cells);
-						return true;
-					}
-				}
-			}
-			else
-			{
-				for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
-				{
-					Cell c = region[i];
-					if (c.Candidates.Count == 0)
-					{
-						continue;
-					}
-					cells[loop] = c;
-					indexes[loop] = i;
-					if (DoNakedTuples(loop + 1, cells, indexes))
-					{
-						return true;
-					}
-				}
-			}
-			return false;
-		}
+			IEnumerable<int> combo = cells.Select(c => c.Candidates).UniteAll();
 
-		return DoNakedTuples(0, new Cell[amount], new int[amount]);
+			if (combo.Count() == amount)
+			{
+				if (Cell.ChangeCandidates(indexes.Select(i => region[i].VisibleCells).IntersectAll(), combo))
+				{
+					LogAction(TechniqueFormat("Naked " + TupleStr[amount], "{0}: {1}", cells.Print(), combo.Print()), cells);
+					return true;
+				}
+			}
+		}
+		else
+		{
+			for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
+			{
+				Cell c = region[i];
+				if (c.Candidates.Count == 0)
+				{
+					continue;
+				}
+
+				cells[loop] = c;
+				indexes[loop] = i;
+
+				if (NakedTuple_Recurse(region, amount, loop + 1, cells, indexes))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
