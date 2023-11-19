@@ -1,15 +1,12 @@
-﻿using Kermalis.SudokuSolver.Core;
-using System;
-using System.ComponentModel;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 
 namespace Kermalis.SudokuSolver.UI;
 
-internal sealed partial class MainWindow : Form
+internal sealed partial class MainWindow : Form // TODO: Readme, alloc, tests, fix custom puzzle
 {
-	private Stopwatch? _stopwatch;
 	private Solver? _solver;
 
 	public MainWindow()
@@ -33,26 +30,19 @@ internal sealed partial class MainWindow : Form
 		_saveAsToolStripMenuItem.Enabled = saveState;
 	}
 
-	private void ChangePuzzle(string puzzleName, bool solveButtonState)
+	private void ChangePuzzle(Solver newSolver, string puzzleName, bool solveButtonState)
 	{
+		_solver = newSolver;
 		ChangeState(solveButtonState, false);
 		_puzzleLabel.Text = puzzleName + " Puzzle";
 		_statusLabel.Text = string.Empty;
-		_logList.DataSource = _solver!.Puzzle.Actions;
-		_sudokuBoard.SetBoard(_solver.Puzzle);
+		_logList.DataSource = _solver.Actions;
+		_sudokuBoard.SetSolver(_solver);
 	}
 
 	private void NewPuzzle(object? sender, EventArgs e)
 	{
-		int[][] board = new int[9][];
-		for (int i = 0; i < 9; i++)
-		{
-			board[i] = new int[9];
-		}
-		_solver = new Solver(new Puzzle(board, true));
-
-		ChangePuzzle("Custom", false);
-		_solver.Puzzle.LogAction("Custom puzzle created");
+		ChangePuzzle(Solver.CreateCustomPuzzle(), "Custom", false);
 		MessageBox.Show("A custom puzzle has been created. Click cells to type in values.", Text);
 	}
 
@@ -70,7 +60,7 @@ internal sealed partial class MainWindow : Form
 			Puzzle puzzle;
 			try
 			{
-				puzzle = Puzzle.Load(d.FileName);
+				puzzle = Puzzle.Parse(File.ReadAllLines(d.FileName));
 			}
 			catch (InvalidDataException)
 			{
@@ -83,8 +73,7 @@ internal sealed partial class MainWindow : Form
 				return;
 			}
 
-			_solver = new Solver(puzzle);
-			ChangePuzzle(Path.GetFileNameWithoutExtension(d.FileName), true);
+			ChangePuzzle(new Solver(puzzle), Path.GetFileNameWithoutExtension(d.FileName), true);
 		}
 	}
 
@@ -99,7 +88,7 @@ internal sealed partial class MainWindow : Form
 
 		if (d.ShowDialog() == DialogResult.OK)
 		{
-			_solver!.Puzzle.Save(d.FileName);
+			File.WriteAllText(d.FileName, _solver!.Puzzle.ToString());
 			MessageBox.Show("Puzzle saved.", Text);
 		}
 	}
@@ -110,32 +99,15 @@ internal sealed partial class MainWindow : Form
 		// Clear solver's guesses on a custom puzzle
 		if (_solver!.Puzzle.IsCustom)
 		{
-			for (int x = 0; x < 9; x++)
-			{
-				for (int y = 0; y < 9; y++)
-				{
-					if (_solver.Puzzle[x, y].Value != _solver.Puzzle[x, y].OriginalValue)
-					{
-						_solver.Puzzle[x, y].Set(Cell.EMPTY_VALUE);
-					}
-				}
-			}
+			_solver.Puzzle.Reset();
 		}
 
-		_stopwatch = new Stopwatch();
-		var bw = new BackgroundWorker();
-		bw.DoWork += _solver.DoWork;
-		bw.RunWorkerCompleted += SolverFinished;
-		_stopwatch.Start();
-		bw.RunWorkerAsync();
-	}
-
-	private void SolverFinished(object? sender, RunWorkerCompletedEventArgs e)
-	{
-		_stopwatch!.Stop();
-		_statusLabel.Text = string.Format("Solver finished in {0} seconds.", _stopwatch.Elapsed.TotalSeconds);
-		_solver!.Puzzle.LogAction(string.Format("Solver {0} the puzzle", ((bool)e.Result!) ? "completed" : "failed"));
-		_logList.SelectedIndex = _solver.Puzzle.Actions.Count - 1;
+		var sw = new Stopwatch();
+		sw.Start();
+		_solver.TrySolve();
+		sw.Stop();
+		_statusLabel.Text = string.Format("Solver finished in {0} seconds.", sw.Elapsed.TotalSeconds);
+		_logList.SelectedIndex = _solver.Actions.Count - 1;
 		_logList.Select();
 	}
 

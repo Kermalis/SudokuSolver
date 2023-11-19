@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<OutputType>WinExe</OutputType>
+		<LangVersion>latest</LangVersion>
+		<RootNamespace>Kermalis.SudokuSolver.UI</RootNamespace>
+		<StartupObject>Kermalis.SudokuSolver.UI.Program</StartupObject>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<OutputPath>..\Build</OutputPath>
+
+		<Authors>Kermalis</Authors>
+		<Copyright>Kermalis</Copyright>
+		<Product>SudokuSolver</Product>
+		<Title>SudokuSolver</Title>
+		<ApplicationIcon>Properties\Icon.ico</ApplicationIcon>
+		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SudokuSolver\SudokuSolver.csproj" />
+	</ItemGroup>
+
+</Project>

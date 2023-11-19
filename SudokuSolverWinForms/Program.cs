@@ -1,8 +1,7 @@
-﻿using Kermalis.SudokuSolver.UI;
-using System;
+﻿using System;
 using System.Windows.Forms;
 
-namespace Kermalis.SudokuSolver;
+namespace Kermalis.SudokuSolver.UI;
 
 internal static class Program
 {
