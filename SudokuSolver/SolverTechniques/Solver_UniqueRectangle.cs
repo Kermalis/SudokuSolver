@@ -26,12 +26,12 @@ partial class Solver
 								{
 									int[] candidates = [value1, value2];
 									Cell[] cells = [c1[y1], c1[y2], c2[y1], c2[y2]];
-									if (cells.Any(c => !c.Candidates.ContainsAll(candidates)))
+									if (cells.Any(c => !c.CandI.ContainsAll(candidates)))
 									{
 										continue;
 									}
 
-									ILookup<int, Cell> l = cells.ToLookup(c => c.Candidates.Count);
+									ILookup<int, Cell> l = cells.ToLookup(c => c.CandI.Count);
 									Cell[] gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g).ToArray(),
 											two = l[2].ToArray(), three = l[3].ToArray(), four = l[4].ToArray();
 
@@ -84,9 +84,9 @@ partial class Solver
 									{
 										case 1:
 										{
-											if (gtTwo[0].Candidates.Count == 3)
+											if (gtTwo[0].CandI.Count == 3)
 											{
-												gtTwo[0].Set(gtTwo[0].Candidates.Single(c => !candidates.Contains(c)));
+												gtTwo[0].Set(gtTwo[0].CandI.Single(c => !candidates.Contains(c)));
 											}
 											else
 											{
@@ -96,11 +96,11 @@ partial class Solver
 										}
 										case 2:
 										{
-											if (!three[0].Candidates.SetEquals(three[1].Candidates))
+											if (!three[0].CandI.SetEquals(three[1].CandI))
 											{
 												continue;
 											}
-											if (!Cell.ChangeCandidates(three[0].VisibleCells.Intersect(three[1].VisibleCells), three[0].Candidates.Except(candidates)))
+											if (!Cell.ChangeCandidates(three[0].VisibleCells.Intersect(three[1].VisibleCells), three[0].CandI.Except(candidates)))
 											{
 												continue;
 											}
@@ -112,14 +112,14 @@ partial class Solver
 											{
 												continue; // Must be non-diagonal
 											}
-											IEnumerable<int> others = gtTwo[0].Candidates.Except(candidates).Union(gtTwo[1].Candidates.Except(candidates));
+											IEnumerable<int> others = gtTwo[0].CandI.Except(candidates).Union(gtTwo[1].CandI.Except(candidates));
 											if (others.Count() > 4 || others.Count() < 2)
 											{
 												continue;
 											}
 											IEnumerable<Cell> nSubset = ((gtTwo[0].Point.Row == gtTwo[1].Point.Row) ? // Same row
 														Puzzle.Rows[gtTwo[0].Point.Row] : Puzzle.Columns[gtTwo[0].Point.Column])
-														.Where(c => c.Candidates.ContainsAny(others) && !c.Candidates.ContainsAny(Utils.OneToNine.Except(others)));
+														.Where(c => c.CandI.ContainsAny(others) && !c.CandI.ContainsAny(Utils.OneToNine.Except(others)));
 											if (nSubset.Count() != others.Count() - 1)
 											{
 												continue;
@@ -178,11 +178,11 @@ partial class Solver
 										}
 										case 5:
 										{
-											if (!three[0].Candidates.SetEquals(three[1].Candidates) || !three[1].Candidates.SetEquals(three[2].Candidates))
+											if (!three[0].CandI.SetEquals(three[1].CandI) || !three[1].CandI.SetEquals(three[2].CandI))
 											{
 												continue;
 											}
-											if (!Cell.ChangeCandidates(three.Select(c => c.VisibleCells).IntersectAll(), three[0].Candidates.Except(candidates)))
+											if (!Cell.ChangeCandidates(three.Select(c => c.VisibleCells).IntersectAll(), three[0].CandI.Except(candidates)))
 											{
 												continue;
 											}

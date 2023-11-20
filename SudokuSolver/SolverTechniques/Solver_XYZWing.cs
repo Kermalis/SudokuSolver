@@ -20,13 +20,13 @@ partial class Solver
 
 	private bool XYZWing_Find(Region region)
 	{
-		Cell[] cells2 = region.Where(c => c.Candidates.Count == 2).ToArray();
+		Cell[] cells2 = region.Where(c => c.CandI.Count == 2).ToArray();
 		if (cells2.Length == 0)
 		{
 			return false;
 		}
 
-		Cell[] cells3 = region.Where(c => c.Candidates.Count == 3).ToArray();
+		Cell[] cells3 = region.Where(c => c.CandI.Count == 3).ToArray();
 		if (cells3.Length == 0)
 		{
 			return false;
@@ -37,19 +37,19 @@ partial class Solver
 		{
 			foreach (Cell c3 in cells3)
 			{
-				if (c2.Candidates.Intersect(c3.Candidates).Count() != 2)
+				if (c2.CandI.Intersect(c3.CandI).Count() != 2)
 				{
 					continue;
 				}
 
 				IEnumerable<Cell> c3Sees = c3.VisibleCells.Except(region)
-								.Where(c => c.Candidates.Count == 2 // If it has 2 candidates
-								&& c.Candidates.Intersect(c3.Candidates).Count() == 2 // Shares them both with c3
-								&& c.Candidates.Intersect(c2.Candidates).Count() == 1); // And shares one with c2
+								.Where(c => c.CandI.Count == 2 // If it has 2 candidates
+								&& c.CandI.Intersect(c3.CandI).Count() == 2 // Shares them both with c3
+								&& c.CandI.Intersect(c2.CandI).Count() == 1); // And shares one with c2
 				foreach (Cell c2_2 in c3Sees)
 				{
 					IEnumerable<Cell> allSee = c2.VisibleCells.Intersect(c3.VisibleCells).Intersect(c2_2.VisibleCells);
-					int allHave = c2.Candidates.Intersect(c3.Candidates).Intersect(c2_2.Candidates).Single(); // Will be 1 Length
+					int allHave = c2.CandI.Intersect(c3.CandI).Intersect(c2_2.CandI).Single(); // Will be 1 Length
 
 					if (Cell.ChangeCandidates(allSee, allHave))
 					{

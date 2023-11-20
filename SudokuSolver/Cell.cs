@@ -26,9 +26,9 @@ public sealed class Cell
 	public ReadOnlyCollection<Cell> VisibleCells { get; private set; }
 
 	public int Value { get; private set; }
-	public Candidates Candidates { get; }
+	internal Candidates CandI;
 
-	public List<CellSnapshot> Snapshots { get; } // TODO: Let's have snapshots be part of the solver. Each action will capture the entire board instead.
+	public Candidates Candidates => CandI;
 
 	internal Cell(Puzzle puzzle, int value, SPoint point)
 	{
@@ -38,8 +38,7 @@ public sealed class Cell
 		Value = value;
 		Point = point;
 
-		Candidates = new Candidates();
-		Snapshots = [];
+		CandI = new Candidates(true);
 
 		// Will be set in InitRegions
 		Block = null!;
@@ -85,38 +84,38 @@ public sealed class Cell
 	}
 
 	// TODO: Remove
-	internal bool ChangeCandidates(IEnumerable<int> candidates, bool remove = true)
+	internal bool ChangeCandidates(IEnumerable<int> digits, bool remove = true)
 	{
 		bool changed = false;
-		foreach (int candidate in candidates)
+		foreach (int digit in digits)
 		{
-			if (Candidates.Set(candidate, !remove))
+			if (CandI.Set(digit, !remove))
 			{
 				changed = true;
 			}
 		}
 		return changed;
 	}
-	internal static bool ChangeCandidates(IEnumerable<Cell> cells, int candidate, bool remove = true)
+	internal static bool ChangeCandidates(IEnumerable<Cell> cells, int digit, bool remove = true)
 	{
 		bool changed = false;
 		foreach (Cell cell in cells)
 		{
-			if (cell.Candidates.Set(candidate, !remove))
+			if (cell.CandI.Set(digit, !remove))
 			{
 				changed = true;
 			}
 		}
 		return changed;
 	}
-	internal static bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> candidates, bool remove = true)
+	internal static bool ChangeCandidates(IEnumerable<Cell> cells, IEnumerable<int> digits, bool remove = true)
 	{
 		bool changed = false;
 		foreach (Cell cell in cells)
 		{
-			foreach (int candidate in candidates)
+			foreach (int digit in digits)
 			{
-				if (cell.Candidates.Set(candidate, !remove))
+				if (cell.CandI.Set(digit, !remove))
 				{
 					changed = true;
 				}
@@ -125,7 +124,7 @@ public sealed class Cell
 		return changed;
 	}
 
-	/// <summary>Changes the current value to <paramref name="newValue"/>. <see cref="Candidates"/> is updated.
+	/// <summary>Changes the current value to <paramref name="newValue"/>. <see cref="CandI"/> is updated.
 	/// If <paramref name="refreshOtherCellCandidates"/> is true, the entire puzzle's candidates are refreshed.</summary>
 	internal void Set(int newValue, bool refreshOtherCellCandidates = false)
 	{
@@ -136,13 +135,13 @@ public sealed class Cell
 		{
 			for (int i = 1; i <= 9; i++)
 			{
-				Candidates.Set(i, true);
+				CandI.Set(i, true);
 			}
 			ChangeCandidates(VisibleCells, oldValue, remove: false);
 		}
 		else
 		{
-			Candidates.Clear(false);
+			CandI = new Candidates(false);
 			ChangeCandidates(VisibleCells, newValue);
 		}
 
@@ -160,11 +159,6 @@ public sealed class Cell
 
 		OriginalValue = value;
 		Set(value, refreshOtherCellCandidates: true);
-	}
-	internal void CreateSnapshot(bool isCulprit, bool isSemiCulprit)
-	{
-		Span<int> cache = stackalloc int[9]; // Don't just make an array of 9 since we may not use all of the slots
-		Snapshots.Add(new CellSnapshot(Value, new ReadOnlyCollection<int>(Candidates.AsInt(cache).ToArray()), isCulprit, isSemiCulprit));
 	}
 
 	public override int GetHashCode()
@@ -189,7 +183,7 @@ public sealed class Cell
 		string s = Point.ToString() + " ";
 		if (Value == EMPTY_VALUE)
 		{
-			s += "has candidates: " + Candidates.Print();
+			s += "has candidates: " + CandI.Print();
 		}
 		else
 		{

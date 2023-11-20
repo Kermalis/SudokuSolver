@@ -64,9 +64,9 @@ partial class Solver
 										foreach (int i in candidates)
 										{
 											int otherVal = candidates.Single(ca => ca != i);
-											if (((pair[0].Value == i && pair[1].Value == Cell.EMPTY_VALUE && pair[1].Candidates.Count == 2 && pair[1].Candidates.Contains(i))
-												|| (pair[1].Value == i && pair[0].Value == Cell.EMPTY_VALUE && pair[0].Candidates.Count == 2 && pair[0].Candidates.Contains(i)))
-												&& otherPair.All(c => c.Value == otherVal || (c.Candidates.Count == 2 && c.Candidates.Contains(otherVal))))
+											if (((pair[0].Value == i && pair[1].Value == Cell.EMPTY_VALUE && pair[1].CandI.Count == 2 && pair[1].CandI.Contains(i))
+												|| (pair[1].Value == i && pair[0].Value == Cell.EMPTY_VALUE && pair[0].CandI.Count == 2 && pair[0].CandI.Contains(i)))
+												&& otherPair.All(c => c.Value == otherVal || (c.CandI.Count == 2 && c.CandI.Contains(otherVal))))
 											{
 												goto breakpairs;
 											}
@@ -80,20 +80,20 @@ partial class Solver
 										case 1:
 										{
 											Cell cell = notSet.ElementAt(0);
-											if (cell.Candidates.Count == 2)
+											if (cell.CandI.Count == 2)
 											{
-												cell.Set(cell.Candidates.Except(candidates).ElementAt(0));
+												cell.Set(cell.CandI.Except(candidates).ElementAt(0));
 											}
 											else
 											{
-												cell.Candidates.Set(cell.Candidates.Intersect(candidates), false);
+												cell.CandI.Set(cell.CandI.Intersect(candidates), false);
 											}
 											changed = true;
 											break;
 										}
 										case 2:
 										{
-											IEnumerable<int> commonCandidates = notSet.Select(c => c.Candidates.Except(candidates)).IntersectAll();
+											IEnumerable<int> commonCandidates = notSet.Select(c => c.CandI.Except(candidates)).IntersectAll();
 											if (commonCandidates.Any()
 												&& Cell.ChangeCandidates(notSet.Select(c => c.VisibleCells).IntersectAll(), commonCandidates))
 											{

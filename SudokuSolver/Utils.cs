@@ -12,6 +12,11 @@ internal static class Utils
 	public static ReadOnlySpan<int> OneToNineSpan => new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	private static readonly StringBuilder _sb = new();
 
+	public static int CellIndex(int col, int row)
+	{
+		return (row * 9) + col;
+	}
+
 	/// <summary>outCol must be 3 length</summary>
 	public static void GetColumnInBlock(this Cell[] block, int x, Span<Cell> outCol)
 	{

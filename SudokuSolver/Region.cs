@@ -37,27 +37,18 @@ public sealed class Region : IEnumerable<Cell>
 		return -1;
 	}
 
-	/// <summary>Result length is [0,9]</summary>
-	internal Span<Cell> GetCellsWithCandidate(int candidate, Span<Cell> cache)
+	/// <summary>Result length is [0, 9]</summary>
+	internal Span<Cell> GetCellsWithCandidate(int digit, Span<Cell> cache)
 	{
-		int counter = 0;
-		for (int i = 0; i < 9; i++)
-		{
-			Cell cell = _cells[i];
-			if (cell.Candidates[candidate])
-			{
-				cache[counter++] = cell;
-			}
-		}
-		return cache.Slice(0, counter);
+		return Candidates.GetCellsWithCandidate(_cells, digit, cache);
 	}
 	public IEnumerable<Cell> GetCellsWithCandidate(int candidate)
 	{
-		return _cells.Where(c => c.Candidates.Contains(candidate));
+		return _cells.Where(c => c.CandI.Contains(candidate));
 	}
 	public IEnumerable<Cell> GetCellsWithCandidates(params int[] candidates)
 	{
-		return _cells.Where(c => c.Candidates.ContainsAll(candidates));
+		return _cells.Where(c => c.CandI.ContainsAll(candidates));
 	}
 
 	/*/// <summary>Result length is [0,9]</summary>
@@ -80,7 +71,7 @@ public sealed class Region : IEnumerable<Cell>
 		for (int i = 0; i < 9; i++)
 		{
 			Cell cell = _cells[i];
-			if (cell.Candidates.Count != 0)
+			if (cell.CandI.Count != 0)
 			{
 				counter++;
 			}
@@ -107,24 +98,15 @@ public sealed class Region : IEnumerable<Cell>
 	/// Result length is [0,9]</summary>
 	internal Span<Cell> Except(Region other, Span<Cell> cache)
 	{
-		int retLength = 0;
-		for (int i = 0; i < 9; i++)
-		{
-			Cell c = _cells[i];
-			if (Array.IndexOf(other._cells, c) == -1)
-			{
-				cache[retLength++] = c;
-			}
-		}
-		return cache.Slice(0, retLength);
+		return Except(other._cells, cache);
 	}
 
-	internal bool CheckForDuplicateValue(int val)
+	internal bool CheckForDuplicateValue(int digit)
 	{
 		bool foundValueAlready = false;
 		for (int i = 0; i < 9; i++)
 		{
-			if (_cells[i].Value == val)
+			if (_cells[i].Value == digit)
 			{
 				if (foundValueAlready)
 				{

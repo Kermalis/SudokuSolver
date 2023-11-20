@@ -32,7 +32,7 @@ public sealed class TestUtils
 	{
 		Assert.True(solver.TrySolve());
 		Assert.False(solver.Puzzle.CheckForErrors());
-		Assert.Contains(solver.Actions, a => a.StartsWith(technique, StringComparison.OrdinalIgnoreCase));
+		Assert.Contains(solver.Actions, a => a.Action.StartsWith(technique, StringComparison.OrdinalIgnoreCase));
 
 		_output.WriteLine(string.Empty);
 		_output.WriteLine(solver.Puzzle.ToStringFancy());
@@ -42,8 +42,8 @@ public sealed class TestUtils
 	{
 		if (e.ListChangedType == ListChangedType.ItemAdded)
 		{
-			var list = (BindingList<string>)sender!;
-			_output.WriteLine(list[e.NewIndex]);
+			var list = (BindingList<PuzzleSnapshot>)sender!;
+			_output.WriteLine(list[e.NewIndex].Action);
 		}
 	}
 }

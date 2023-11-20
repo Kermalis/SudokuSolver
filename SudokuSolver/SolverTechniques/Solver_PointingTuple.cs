@@ -27,8 +27,8 @@ partial class Solver
 				for (int j = 0; j < 3; j++) // 3 rows/columns in block
 				{
 					// The 3 cells' candidates in a block's row/column
-					rowCandidates[j] = blockrow[r].GetRowInBlock(j).Select(c => c.Candidates).UniteAll().ToArray();
-					colCand[j] = blockcol[r].GetColumnInBlock(j).Select(c => c.Candidates).UniteAll().ToArray();
+					rowCandidates[j] = blockrow[r].GetRowInBlock(j).Select(c => (IEnumerable<int>)c.CandI).UniteAll().ToArray();
+					colCand[j] = blockcol[r].GetColumnInBlock(j).Select(c => (IEnumerable<int>)c.CandI).UniteAll().ToArray();
 				}
 
 				bool RemovePointingTuple(bool doRows, int rcIndex, IEnumerable<int> candidates)

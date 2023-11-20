@@ -13,22 +13,20 @@ public sealed class Puzzle
 	public ReadOnlyCollection<ReadOnlyCollection<Region>> Regions { get; }
 
 	public bool IsCustom { get; }
-	/// <summary>Stored as x,y (col,row)</summary>
-	private readonly Cell[][] _board;
+	private readonly Cell[] _board;
 
-	public Cell this[int col, int row] => _board[col][row];
+	public Cell this[int col, int row] => _board[Utils.CellIndex(col, row)];
 
 	private Puzzle(int[][] board, bool isCustom)
 	{
 		IsCustom = isCustom;
 
-		_board = new Cell[9][];
+		_board = new Cell[81];
 		for (int col = 0; col < 9; col++)
 		{
-			_board[col] = new Cell[9];
 			for (int row = 0; row < 9; row++)
 			{
-				_board[col][row] = new Cell(this, board[col][row], new SPoint(col, row));
+				_board[Utils.CellIndex(col, row)] = new Cell(this, board[col][row], new SPoint(col, row));
 			}
 		}
 
@@ -41,13 +39,13 @@ public sealed class Puzzle
 			int j;
 			for (j = 0; j < 9; j++)
 			{
-				cells[j] = _board[j][i];
+				cells[j] = _board[Utils.CellIndex(j, i)];
 			}
 			rows[i] = new Region(cells);
 
 			for (j = 0; j < 9; j++)
 			{
-				cells[j] = _board[i][j];
+				cells[j] = _board[Utils.CellIndex(i, j)];
 			}
 			columns[i] = new Region(cells);
 
@@ -58,7 +56,7 @@ public sealed class Puzzle
 			{
 				for (int row = y; row < y + 3; row++)
 				{
-					cells[j++] = _board[col][row];
+					cells[j++] = _board[Utils.CellIndex(col, row)];
 				}
 			}
 			blocks[i] = new Region(cells);
@@ -71,45 +69,32 @@ public sealed class Puzzle
 			Blocks = new ReadOnlyCollection<Region>(blocks)
 		});
 
-		for (int col = 0; col < 9; col++)
+		for (int i = 0; i < 81; i++)
 		{
-			for (int row = 0; row < 9; row++)
-			{
-				_board[col][row].InitRegions();
-			}
+			_board[i].InitRegions();
 		}
-
-		for (int col = 0; col < 9; col++)
+		for (int i = 0; i < 81; i++)
 		{
-			for (int row = 0; row < 9; row++)
-			{
-				_board[col][row].InitVisibleCells();
-			}
+			_board[i].InitVisibleCells();
 		}
 	}
 
 	internal void RefreshCandidates()
 	{
-		for (int col = 0; col < 9; col++)
+		for (int i = 0; i < 81; i++)
 		{
-			for (int row = 0; row < 9; row++)
+			Cell cell = _board[i];
+			for (int digit = 1; digit <= 9; digit++)
 			{
-				Cell cell = _board[col][row];
-				for (int i = 1; i <= 9; i++)
-				{
-					cell.Candidates.Set(i, true);
-				}
+				cell.CandI.Set(digit, true);
 			}
 		}
-		for (int col = 0; col < 9; col++)
+		for (int i = 0; i < 81; i++)
 		{
-			for (int row = 0; row < 9; row++)
+			Cell cell = _board[i];
+			if (cell.Value != Cell.EMPTY_VALUE)
 			{
-				Cell cell = _board[col][row];
-				if (cell.Value != Cell.EMPTY_VALUE)
-				{
-					cell.Set(cell.Value);
-				}
+				cell.Set(cell.Value);
 			}
 		}
 	}
@@ -162,28 +147,25 @@ public sealed class Puzzle
 
 	public void Reset()
 	{
-		for (int col = 0; col < 9; col++)
+		for (int i = 0; i < 81; i++)
 		{
-			for (int row = 0; row < 9; row++)
+			Cell cell = _board[i];
+			if (cell.Value != cell.OriginalValue)
 			{
-				Cell cell = _board[col][row];
-				if (cell.Value != cell.OriginalValue)
-				{
-					cell.Set(Cell.EMPTY_VALUE);
-				}
+				cell.Set(Cell.EMPTY_VALUE);
 			}
 		}
 	}
 	/// <summary>Returns true if any digit is repeated. Can be called even if the puzzle isn't solved yet.</summary>
 	public bool CheckForErrors()
 	{
-		for (int val = 1; val <= 9; val++)
+		for (int digit = 1; digit <= 9; digit++)
 		{
 			for (int i = 0; i < 9; i++)
 			{
-				if (Blocks[i].CheckForDuplicateValue(val)
-					|| Rows[i].CheckForDuplicateValue(val)
-					|| Columns[i].CheckForDuplicateValue(val))
+				if (Blocks[i].CheckForDuplicateValue(digit)
+					|| Rows[i].CheckForDuplicateValue(digit)
+					|| Columns[i].CheckForDuplicateValue(digit))
 				{
 					return true;
 				}
@@ -199,7 +181,7 @@ public sealed class Puzzle
 		{
 			for (int col = 0; col < 9; col++)
 			{
-				Cell cell = _board[col][row];
+				Cell cell = _board[Utils.CellIndex(col, row)];
 				if (cell.OriginalValue == Cell.EMPTY_VALUE)
 				{
 					sb.Append('-');
@@ -236,7 +218,7 @@ public sealed class Puzzle
 					sb.Append('┃');
 				}
 
-				Cell cell = _board[col][row];
+				Cell cell = _board[Utils.CellIndex(col, row)];
 				if (cell.Value == Cell.EMPTY_VALUE)
 				{
 					sb.Append(' ');

@@ -9,12 +9,12 @@ namespace Kermalis.SudokuSolver;
 public sealed partial class Solver
 {
 	public Puzzle Puzzle { get; }
-	public BindingList<string> Actions { get; }
+	public BindingList<PuzzleSnapshot> Actions { get; }
 
 	public Solver(Puzzle puzzle)
 	{
 		Puzzle = puzzle;
-		Actions = new BindingList<string>();
+		Actions = [];
 
 		_techniques = InitSolverTechniques();
 	}
@@ -33,8 +33,8 @@ public sealed partial class Solver
 		}
 
 		cell.ChangeOriginalValue(value);
-		string action = TechniqueFormat("Changed cell", cell.ToString());
-		LogAction(action, cell);
+		LogAction(TechniqueFormat("Changed cell", cell.ToString()),
+			cell);
 	}
 
 	public bool TrySolve()
@@ -111,7 +111,7 @@ public sealed partial class Solver
 
 				// Empty cell... check for naked single
 				solved = false;
-				if (cell.Candidates.TryGetCount1(out int nakedSingle))
+				if (cell.CandI.TryGetCount1(out int nakedSingle))
 				{
 					cell.Set(nakedSingle);
 
@@ -146,110 +146,128 @@ public sealed partial class Solver
 	}
 	private void LogAction(string action)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(false, false);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, false, false);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, Cell culprit)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprit == cell, false);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, false);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, Cell culprit, Cell semiCulprit)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprit == cell, semiCulprit == cell);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, semiCulprit == cell);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, ReadOnlySpan<Cell> culprits)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprits.SimpleIndexOf(cell) != -1, false);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, false);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, ReadOnlySpan<Cell> culprits, Cell semiCulprit)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprits.SimpleIndexOf(cell) != -1, semiCulprit == cell);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, semiCulprit == cell);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, Cell culprit, ReadOnlySpan<Cell> semiCulprits)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprit == cell, semiCulprits.SimpleIndexOf(cell) != -1);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, semiCulprits.SimpleIndexOf(cell) != -1);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	private void LogAction(string action, ReadOnlySpan<Cell> culprits, ReadOnlySpan<Cell> semiCulprits)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprits.SimpleIndexOf(cell) != -1, semiCulprits.SimpleIndexOf(cell) != -1);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, semiCulprits.SimpleIndexOf(cell) != -1);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	public void LogAction(string action, IEnumerable<Cell> culprits)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprits.Contains(cell), false);
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.Contains(cell), false);
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 	public void LogAction(string action, IEnumerable<Cell> culprits, IEnumerable<Cell> semiCulprits)
 	{
+		var sBoard = new CellSnapshot[81];
 		for (int col = 0; col < 9; col++)
 		{
 			for (int row = 0; row < 9; row++)
 			{
 				Cell cell = Puzzle[col, row];
-				cell.CreateSnapshot(culprits.Contains(cell), semiCulprits.Contains(cell));
+
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.Contains(cell), semiCulprits.Contains(cell));
 			}
 		}
-		Actions.Add(action);
+		Actions.Add(new PuzzleSnapshot(action, sBoard));
 	}
 }

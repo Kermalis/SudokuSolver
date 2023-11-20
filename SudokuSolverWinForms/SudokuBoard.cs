@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -84,22 +83,22 @@ internal sealed class SudokuBoard : UserControl
 
 				Cell cell = _solver.Puzzle[x, y];
 				int val;
-				IEnumerable<int> candidates;
+				Candidates candidates;
 
-				if (_snapshotIndex == NO_SNAPSHOT || _snapshotIndex >= cell.Snapshots.Count)
+				if (_snapshotIndex == NO_SNAPSHOT || _snapshotIndex >= _solver.Actions.Count)
 				{
 					val = cell.Value;
 					candidates = cell.Candidates;
 				}
 				else
 				{
-					CellSnapshot s = cell.Snapshots[_snapshotIndex];
+					CellSnapshot s = GetCellSnapshot(_solver, _snapshotIndex, cell);
 					val = s.Value;
 					candidates = s.Candidates;
 					int xxoff = x % 3 == 0 ? 1 : 0, yyoff = y % 3 == 0 ? 1 : 0; // MATH
 					int exoff = x % 3 == 2 ? 1 : 0, eyoff = y % 3 == 2 ? 1 : 0;
 					var rect = new RectangleF(xoff + SPACE_BEFORE_GRID + 1 + xxoff, yoff + SPACE_BEFORE_GRID + 1 + yyoff, w - 1 - xxoff - exoff, h - 1 - yyoff - eyoff);
-					bool changed = _snapshotIndex - 1 >= 0 && !new HashSet<int>(s.Candidates).SetEquals(cell.Snapshots[_snapshotIndex - 1].Candidates);
+					bool changed = _snapshotIndex - 1 >= 0 && !candidates.SetEquals(GetCellSnapshot(_solver, _snapshotIndex - 1, cell).Candidates);
 					Brush? brush = null;
 					if (changed)
 					{
@@ -141,8 +140,13 @@ internal sealed class SudokuBoard : UserControl
 				}
 				else if (_showCandidates)
 				{
-					foreach (int c in candidates)
+					for (int c = 1; c <= 9; c++)
 					{
+						if (!candidates.IsCandidate(c))
+						{
+							continue;
+						}
+
 						float stringX = xoff + fMini.Size / 4 + ((c - 1) % 3 * (w / 3)) + SPACE_BEFORE_GRID;
 						float stringY = yoff + ((c - 1) / 3 * (h / 3)) + SPACE_BEFORE_GRID;
 						e.Graphics.DrawString(c.ToString(), fMini, _candidateText, stringX, stringY);
@@ -150,6 +154,11 @@ internal sealed class SudokuBoard : UserControl
 				}
 			}
 		}
+	}
+
+	private static CellSnapshot GetCellSnapshot(Solver solver, int snapshotIdx, Cell cell)
+	{
+		return solver.Actions[snapshotIdx][cell.Point.Column, cell.Point.Row];
 	}
 
 	private Cell? GetCellFromMouseLocation(Point location)

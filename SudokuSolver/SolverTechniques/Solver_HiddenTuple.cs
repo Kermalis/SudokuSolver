@@ -63,7 +63,7 @@ partial class Solver
 		if (loop == amount)
 		{
 			IEnumerable<Cell> cells = candidates.Select(region.GetCellsWithCandidate).UniteAll();
-			IEnumerable<int> cands = cells.Select(c => c.Candidates).UniteAll();
+			IEnumerable<int> cands = cells.Select(c => (IEnumerable<int>)c.CandI).UniteAll();
 
 			if (cells.Count() != amount // There aren't "amount" cells for our tuple to be in
 				|| cands.Count() == amount // We already know it's a tuple (might be faster to skip this check, idk)

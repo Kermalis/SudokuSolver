@@ -4,55 +4,67 @@ using System.Collections.Generic;
 
 namespace Kermalis.SudokuSolver;
 
-public sealed class Candidates : IEnumerable<int>
+public struct Candidates : IEnumerable<int>
 {
-	private readonly bool[] _isCandidate;
-	public int Count { get; private set; }
+	// First 9 bits are flags for valid candidates. Next 4 bits are for the count [0, 9]. Last 3 bits unused
+	private const ushort ALL_POSSIBLE = 0b1_1111_1111 | (9 << 9);
+	private const ushort NONE_POSSIBLE = 0;
 
-	/// <summary>true if the candidate is still possible</summary>
-	public bool this[int can]
+	private ushort _data;
+
+	public readonly int Count => _data >> 9;
+
+	internal Candidates(bool possible)
 	{
-		get => _isCandidate[can - 1];
-		private set => _isCandidate[can - 1] = value;
+		_data = possible ? ALL_POSSIBLE : NONE_POSSIBLE;
 	}
 
-	public Candidates()
+	public readonly bool IsCandidate(int digit)
 	{
-		_isCandidate = new bool[9];
-		Clear(true);
-	}
-
-	internal void Clear(bool possible)
-	{
-		for (int i = 0; i < 9; i++)
+		if (digit is < 1 or > 9)
 		{
-			_isCandidate[i] = possible;
+			throw new ArgumentOutOfRangeException(nameof(digit), digit, null);
 		}
-		Count = possible ? 9 : 0;
+
+		return IsCandidate_Fast(digit - 1);
 	}
-	/// <summary>Returns true if there was a change.</summary>
-	internal bool Set(int candidate, bool newState)
+	private readonly bool IsCandidate_Fast(int index)
 	{
-		bool changed = this[candidate] != newState;
+		int bit = 1 << index;
+		return (_data & bit) != 0;
+	}
+
+	private void SetCount(int count)
+	{
+		_data &= 0b1110_0001_1111_1111;
+		_data |= (ushort)(count << 9);
+	}
+
+	/// <summary>Returns true if there was a change.</summary>
+	internal bool Set(int digit, bool newState)
+	{
+		int index = digit - 1;
+		bool changed = IsCandidate_Fast(index) != newState;
 		if (changed)
 		{
+			_data ^= (ushort)(1 << index);
 			if (newState)
 			{
-				Count++;
+				SetCount(Count + 1);
 			}
 			else
 			{
-				Count--;
+				SetCount(Count - 1);
 			}
 		}
-		this[candidate] = newState;
+
 		return changed;
 	}
 	/// <summary>Returns true if there was a change.</summary>
-	internal bool Set(ReadOnlySpan<int> candidates, bool newState)
+	internal bool Set(ReadOnlySpan<int> digit, bool newState)
 	{
 		bool changed = false;
-		foreach (int can in candidates)
+		foreach (int can in digit)
 		{
 			if (Set(can, newState))
 			{
@@ -62,10 +74,10 @@ public sealed class Candidates : IEnumerable<int>
 		return changed;
 	}
 	/// <summary>Returns true if there was a change.</summary>
-	internal bool Set(IEnumerable<int> candidates, bool newState)
+	internal bool Set(IEnumerable<int> digit, bool newState)
 	{
 		bool changed = false;
-		foreach (int can in candidates)
+		foreach (int can in digit)
 		{
 			if (Set(can, newState))
 			{
@@ -75,12 +87,12 @@ public sealed class Candidates : IEnumerable<int>
 		return changed;
 	}
 	/// <summary>Returns true if there was a change.</summary>
-	internal static bool Set(ReadOnlySpan<Cell> cells, int candidate, bool newState)
+	internal static bool Set(ReadOnlySpan<Cell> cells, int digit, bool newState)
 	{
 		bool changed = false;
 		foreach (Cell cell in cells)
 		{
-			if (cell.Candidates.Set(candidate, newState))
+			if (cell.CandI.Set(digit, newState))
 			{
 				changed = true;
 			}
@@ -88,14 +100,14 @@ public sealed class Candidates : IEnumerable<int>
 		return changed;
 	}
 	/// <summary>Returns true if there was a change.</summary>
-	internal static bool Set(ReadOnlySpan<Cell> cells, ReadOnlySpan<int> candidates, bool newState)
+	internal static bool Set(ReadOnlySpan<Cell> cells, ReadOnlySpan<int> digit, bool newState)
 	{
 		bool changed = false;
 		foreach (Cell cell in cells)
 		{
-			foreach (int cand in candidates)
+			foreach (int cand in digit)
 			{
-				if (cell.Candidates.Set(cand, newState))
+				if (cell.CandI.Set(cand, newState))
 				{
 					changed = true;
 				}
@@ -105,82 +117,82 @@ public sealed class Candidates : IEnumerable<int>
 	}
 
 	/// <summary>Result length is [0,9]</summary>
-	internal Span<int> Intersect(Candidates other, Span<int> cache)
+	internal readonly Span<int> Intersect(Candidates other, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (this[can] && other[can])
+			if (IsCandidate_Fast(i) && other.IsCandidate_Fast(i))
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = i + 1;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 	/// <summary>Result length is [0,9]</summary>
-	internal Span<int> Intersect(Candidates otherA, Candidates otherB, Span<int> cache)
+	internal readonly Span<int> Intersect(Candidates otherA, Candidates otherB, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (this[can] && otherA[can] && otherB[can])
+			if (IsCandidate_Fast(i) && otherA.IsCandidate_Fast(i) && otherB.IsCandidate_Fast(i))
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = i + 1;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 	/// <summary>Result length is [0,9]</summary>
-	internal Span<int> Intersect(ReadOnlySpan<int> other, Span<int> cache)
+	internal readonly Span<int> Intersect(ReadOnlySpan<int> other, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int digit = 1; digit <= 9; digit++)
 		{
-			if (this[can] && other.SimpleIndexOf(can) != -1)
+			if (IsCandidate_Fast(digit - 1) && other.SimpleIndexOf(digit) != -1)
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = digit;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 	/// <summary>Returns all candidates except for the ones in <paramref name="other"/>.
 	/// Result length is [0,8]</summary>
-	internal Span<int> Except(Candidates other, Span<int> cache)
+	internal readonly Span<int> Except(Candidates other, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (this[can] && !other[can])
+			if (IsCandidate_Fast(i) && !other.IsCandidate_Fast(i))
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = i + 1;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 	/// <summary>Returns all candidates except for the ones in <paramref name="other"/>.
 	/// Result length is [0,8]</summary>
-	internal Span<int> Except(ReadOnlySpan<int> other, Span<int> cache)
+	internal readonly Span<int> Except(ReadOnlySpan<int> other, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int digit = 1; digit <= 9; digit++)
 		{
-			if (this[can] && other.SimpleIndexOf(can) == -1)
+			if (IsCandidate_Fast(digit - 1) && other.SimpleIndexOf(digit) == -1)
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = digit;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 	/// <summary>Returns all candidates except for <paramref name="other"/>.
 	/// Result length is [0,8]</summary>
-	internal Span<int> Except(int other, Span<int> cache)
+	internal readonly Span<int> Except(int other, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int digit = 1; digit <= 9; digit++)
 		{
-			if (can != other && this[can])
+			if (digit != other && IsCandidate_Fast(digit - 1))
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = digit;
 			}
 		}
 		return cache.Slice(0, retLength);
@@ -189,13 +201,13 @@ public sealed class Candidates : IEnumerable<int>
 	internal static Span<int> Union(ReadOnlySpan<Cell> cells, Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
 			foreach (Cell cell in cells)
 			{
-				if (cell.Candidates[can])
+				if (cell.CandI.IsCandidate_Fast(i))
 				{
-					cache[retLength++] = can;
+					cache[retLength++] = i + 1;
 					break;
 				}
 			}
@@ -205,28 +217,28 @@ public sealed class Candidates : IEnumerable<int>
 
 	/// <summary>Returns these candidates as ints in the range [1,9].
 	/// Result length is [0,9]</summary>
-	internal Span<int> AsInt(Span<int> cache)
+	internal readonly Span<int> AsInt(Span<int> cache)
 	{
 		int retLength = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (this[can])
+			if (IsCandidate_Fast(i))
 			{
-				cache[retLength++] = can;
+				cache[retLength++] = i + 1;
 			}
 		}
 		return cache.Slice(0, retLength);
 	}
 
-	/// <summary>Returns the cells from <paramref name="cells"/> that have <paramref name="can"/>.
-	/// Result length is [0,cells.Length)</summary>
-	internal static Span<Cell> WithCandidate(ReadOnlySpan<Cell> cells, int can, Span<Cell> cache)
+	/// <summary>Returns the cells from <paramref name="cells"/> that have <paramref name="digit"/>.
+	/// Result length is [0, cells.Length]</summary>
+	internal static Span<Cell> GetCellsWithCandidate(ReadOnlySpan<Cell> cells, int digit, Span<Cell> cache)
 	{
 		int retLength = 0;
 		for (int i = 0; i < cells.Length; i++)
 		{
 			Cell cell = cells[i];
-			if (cell.Candidates[can])
+			if (cell.CandI.IsCandidate_Fast(digit - 1))
 			{
 				cache[retLength++] = cell;
 			}
@@ -234,26 +246,19 @@ public sealed class Candidates : IEnumerable<int>
 		return cache.Slice(0, retLength);
 	}
 
-	public string Print()
+	public readonly string Print()
 	{
 		Span<int> span = stackalloc int[9];
 		return Utils.PrintCandidates(AsInt(span));
 	}
 	/// <summary>Returns true if <paramref name="other"/> has the same candidates as <c>this</c></summary>
-	public bool SetEquals(Candidates other)
+	public readonly bool SetEquals(Candidates other)
 	{
-		for (int can = 1; can <= 9; can++)
-		{
-			if (this[can] != other[can])
-			{
-				return false;
-			}
-		}
-		return true;
+		return _data == other._data;
 	}
 
 	/// <summary>Returns true if <see cref="Count"/> is 1, and sets <paramref name="can1"/> to the candidate.</summary>
-	internal bool TryGetCount1(out int can1)
+	internal readonly bool TryGetCount1(out int can1)
 	{
 		if (Count != 1)
 		{
@@ -261,18 +266,18 @@ public sealed class Candidates : IEnumerable<int>
 			return false;
 		}
 
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (this[can])
+			if (IsCandidate_Fast(i))
 			{
-				can1 = can;
+				can1 = i + 1;
 				return true;
 			}
 		}
 		throw new InvalidOperationException();
 	}
 	/// <summary>Returns true if <see cref="Count"/> is 2, and sets <paramref name="can1"/> and <paramref name="can2"/> to the candidates.</summary>
-	internal bool TryGetCount2(out int can1, out int can2)
+	internal readonly bool TryGetCount2(out int can1, out int can2)
 	{
 		can1 = -1;
 		can2 = -1;
@@ -283,20 +288,20 @@ public sealed class Candidates : IEnumerable<int>
 		}
 
 		int counter = 0;
-		for (int can = 1; can <= 9; can++)
+		for (int i = 0; i < 9; i++)
 		{
-			if (!this[can])
+			if (!IsCandidate_Fast(i))
 			{
 				continue;
 			}
 
 			if (counter++ == 0)
 			{
-				can1 = can;
+				can1 = i + 1;
 			}
 			else
 			{
-				can2 = can;
+				can2 = i + 1;
 				break;
 			}
 		}
@@ -304,11 +309,11 @@ public sealed class Candidates : IEnumerable<int>
 	}
 
 	// TODO: Eventually remove..?
-	public IEnumerator<int> GetEnumerator()
+	public readonly IEnumerator<int> GetEnumerator()
 	{
 		for (int i = 0; i < 9; i++)
 		{
-			if (_isCandidate[i])
+			if (IsCandidate_Fast(i))
 			{
 				yield return i + 1;
 			}

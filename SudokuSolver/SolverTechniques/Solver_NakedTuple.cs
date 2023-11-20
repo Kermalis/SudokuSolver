@@ -56,7 +56,7 @@ partial class Solver
 	{
 		if (loop == amount)
 		{
-			IEnumerable<int> combo = cells.Select(c => c.Candidates).UniteAll();
+			IEnumerable<int> combo = cells.Select(c => (IEnumerable<int>)c.CandI).UniteAll();
 
 			if (combo.Count() == amount)
 			{
@@ -75,7 +75,7 @@ partial class Solver
 			for (int i = loop == 0 ? 0 : indexes[loop - 1] + 1; i < 9; i++)
 			{
 				Cell c = region[i];
-				if (c.Candidates.Count == 0)
+				if (c.CandI.Count == 0)
 				{
 					continue;
 				}

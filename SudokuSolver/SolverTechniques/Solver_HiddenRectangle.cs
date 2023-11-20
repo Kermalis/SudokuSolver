@@ -24,11 +24,11 @@ partial class Solver
 							{
 								int[] candidates = [value1, value2];
 								Cell[] cells = [c1[y1], c1[y2], c2[y1], c2[y2]];
-								if (cells.Any(c => !c.Candidates.ContainsAll(candidates)))
+								if (cells.Any(c => !c.CandI.ContainsAll(candidates)))
 								{
 									continue;
 								}
-								ILookup<int, Cell> l = cells.ToLookup(c => c.Candidates.Count);
+								ILookup<int, Cell> l = cells.ToLookup(c => c.CandI.Count);
 								IEnumerable<Cell> gtTwo = l.Where(g => g.Key > 2).SelectMany(g => g);
 								int gtTwoCount = gtTwo.Count();
 								if (gtTwoCount < 2 || gtTwoCount > 3)
@@ -47,13 +47,13 @@ partial class Solver
 											&& !Puzzle.Columns[eks].GetCellsWithCandidate(i).Except(cells).Any())
 										{
 											Cell diag = Puzzle[eks, why];
-											if (diag.Candidates.Count == 2)
+											if (diag.CandI.Count == 2)
 											{
 												diag.Set(i);
 											}
 											else
 											{
-												diag.Candidates.Set(i == value1 ? value2 : value1, false);
+												diag.CandI.Set(i == value1 ? value2 : value1, false);
 											}
 											changed = true;
 										}
