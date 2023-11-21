@@ -153,7 +153,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, false, false);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, false, false);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -167,7 +167,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, false);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprit == cell, false);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -181,7 +181,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, semiCulprit == cell);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprit == cell, semiCulprit == cell);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -195,7 +195,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, false);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprits.SimpleIndexOf(cell) != -1, false);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -209,7 +209,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, semiCulprit == cell);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprits.SimpleIndexOf(cell) != -1, semiCulprit == cell);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -223,7 +223,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprit == cell, semiCulprits.SimpleIndexOf(cell) != -1);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprit == cell, semiCulprits.SimpleIndexOf(cell) != -1);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -237,7 +237,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.SimpleIndexOf(cell) != -1, semiCulprits.SimpleIndexOf(cell) != -1);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprits.SimpleIndexOf(cell) != -1, semiCulprits.SimpleIndexOf(cell) != -1);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -251,7 +251,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.Contains(cell), false);
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprits.Contains(cell), false);
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));
@@ -265,7 +265,7 @@ public sealed partial class Solver
 			{
 				Cell cell = Puzzle[col, row];
 
-				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell.Value, cell.CandI, culprits.Contains(cell), semiCulprits.Contains(cell));
+				sBoard[Utils.CellIndex(col, row)] = new CellSnapshot(cell, culprits.Contains(cell), semiCulprits.Contains(cell));
 			}
 		}
 		Actions.Add(new PuzzleSnapshot(action, sBoard));

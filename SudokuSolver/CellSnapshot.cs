@@ -1,17 +1,20 @@
 ﻿namespace Kermalis.SudokuSolver;
 
-public sealed class CellSnapshot
+public readonly struct CellSnapshot
 {
-	public int Value { get; }
 	public Candidates Candidates { get; }
-	public bool IsCulprit { get; }
-	public bool IsSemiCulprit { get; }
+	/// <summary>First 4 bits for <see cref="Value"/> [0, 9]. Next bit for <see cref="IsCulprit"/>. Next bit for <see cref="IsSemiCulprit"/>. Last 2 bits unused.</summary>
+	private readonly byte _data;
 
-	internal CellSnapshot(int value, Candidates candidates, bool isCulprit, bool isSemiCulprit)
+	public int Value => _data & 0b0000_1111;
+	public bool IsCulprit => (_data & 0b0001_0000) != 0;
+	public bool IsSemiCulprit => (_data & 0b0010_0000) != 0;
+
+	internal CellSnapshot(Cell cell, bool isCulprit, bool isSemiCulprit)
 	{
-		Value = value;
-		Candidates = candidates;
-		IsCulprit = isCulprit;
-		IsSemiCulprit = isSemiCulprit;
+		Candidates = cell.Candidates;
+		_data = (byte)cell.Value;
+		_data |= (byte)((isCulprit ? 1 : 0) << 4);
+		_data |= (byte)((isSemiCulprit ? 1 : 0) << 5);
 	}
 }
