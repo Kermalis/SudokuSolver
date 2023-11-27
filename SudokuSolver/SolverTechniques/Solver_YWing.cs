@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kermalis.SudokuSolver;
 
 partial class Solver
 {
+	// TODO: Comments
 	private bool YWing()
 	{
 		for (int i = 0; i < 9; i++)
@@ -20,50 +20,136 @@ partial class Solver
 
 	private bool YWing_Find(Region region)
 	{
-		Cell[] cells = region.Where(c => c.CandI.Count == 2).ToArray();
-		if (cells.Length < 2)
+		Span<Cell> cellsWith2Cand = _cellCache.AsSpan(0, 9);
+		cellsWith2Cand = region.GetCellsWithCandidateCount(2, cellsWith2Cand);
+		if (cellsWith2Cand.Length < 2)
 		{
 			return false;
 		}
 
-		for (int j = 0; j < cells.Length; j++)
+		for (int i = 0; i < cellsWith2Cand.Length; i++)
 		{
-			Cell c1 = cells[j];
-			for (int k = j + 1; k < cells.Length; k++)
+			Cell c1 = cellsWith2Cand[i];
+
+			for (int j = i + 1; j < cellsWith2Cand.Length; j++)
 			{
-				Cell c2 = cells[k];
-				IEnumerable<int> inter = c1.CandI.Intersect(c2.CandI);
-				if (inter.Count() != 1)
+				Cell c2 = cellsWith2Cand[j];
+
+				if (!YWing_GetSingleSharedCandidate(c1.CandI, c2.CandI, out int other1, out int other2))
 				{
 					continue;
 				}
 
-				int other1 = c1.CandI.Except(inter).ElementAt(0);
-				int other2 = c2.CandI.Except(inter).ElementAt(0);
-
-				var a = new Cell[] { c1, c2 };
-				foreach (Cell cell in a)
+				if (YWing_Match(cellsWith2Cand, other1, other2, c1, c2))
 				{
-					IEnumerable<Cell> c3a = cell.VisibleCells.Except(cells).Where(c => c.CandI.Count == 2 && c.CandI.Intersect(new int[] { other1, other2 }).Count() == 2);
-					if (c3a.Count() == 1) // Example: p1 and p3 see each other, so remove similarities from p2 and p3
-					{
-						Cell c3 = c3a.ElementAt(0);
-						Cell cOther = a.Single(c => c != cell);
-						IEnumerable<Cell> commonCells = cOther.VisibleCells.Intersect(c3.VisibleCells);
-						int candidate = cOther.CandI.Intersect(c3.CandI).Single(); // Will just be 1 candidate
-						if (Cell.ChangeCandidates(commonCells, candidate))
-						{
-							ReadOnlySpan<Cell> culprits = [c1, c2, c3];
-							LogAction(TechniqueFormat("Y-Wing",
-								"{0}: {1}",
-								Utils.PrintCells(culprits), candidate),
-								culprits);
-							return true;
-						}
-					}
+					return true;
+				}
+				if (YWing_Match(cellsWith2Cand, other1, other2, c2, c1))
+				{
+					return true;
 				}
 			}
 		}
+
 		return false;
+	}
+	private static bool YWing_GetSingleSharedCandidate(Candidates a, Candidates b, out int other1, out int other2)
+	{
+		// These two cells only have 2 candidates each.
+		// For example:
+		// 4 and 5
+		// 3 and 5
+		// ...1 shared candidate.
+
+		a.GetCount2(out int a1, out int a2);
+		b.GetCount2(out int b1, out int b2);
+
+		int sharedCount = 0;
+		int sharedCandidate = -1;
+
+		if (a1 == b1)
+		{
+			sharedCandidate = a1;
+			sharedCount++;
+		}
+		if (a1 == b2)
+		{
+			sharedCandidate = a1;
+			sharedCount++;
+		}
+		if (a2 == b1)
+		{
+			sharedCandidate = a2;
+			sharedCount++;
+		}
+		if (a2 == b2)
+		{
+			sharedCandidate = a2;
+			sharedCount++;
+		}
+
+		if (sharedCount != 1)
+		{
+			other1 = -1;
+			other2 = -1;
+			return false;
+		}
+
+		other1 = sharedCandidate == a1 ? a2 : a1;
+		other2 = sharedCandidate == b1 ? b2 : b1;
+		return true;
+	}
+	private bool YWing_Match(ReadOnlySpan<Cell> cellsWith2Cand, int other1, int other2, Cell cell, Cell cOther)
+	{
+		// Example: c1 and c3 see each other, so remove similarities from c2 and c3
+		if (!YWing_FindSingleMatch(cell, cellsWith2Cand, other1, other2, out Cell? c3))
+		{
+			return false;
+		}
+
+		Span<Cell> commonCells = _cellCache.AsSpan(9, 7);
+		commonCells = c3.IntersectVisibleCells(cOther, commonCells);
+
+		Span<int> commonCandidates = stackalloc int[1];
+		commonCandidates = c3.CandI.Intersect(cOther.CandI, commonCandidates); // Will just be 1 candidate
+		int candidate = commonCandidates[0];
+		if (Candidates.Set(commonCells, candidate, false))
+		{
+			Span<Cell> culprits = _cellCache.AsSpan(0, 3);
+			culprits[0] = cell;
+			culprits[1] = cOther;
+			culprits[2] = c3;
+
+			LogAction(TechniqueFormat("Y-Wing",
+				"{0}: {1}",
+				Utils.PrintCells(culprits), candidate),
+				culprits);
+			return true;
+		}
+		return false;
+	}
+	private static bool YWing_FindSingleMatch(Cell cell, ReadOnlySpan<Cell> cellsWith2Cand, int other1, int other2, [NotNullWhen(true)] out Cell? c3)
+	{
+		// Desperately need comments!
+		c3 = null;
+
+		foreach (Cell c in cell.VisibleI)
+		{
+			if (cellsWith2Cand.SimpleIndexOf(c) != -1)
+			{
+				continue;
+			}
+
+			if (c.CandI.Count == 2 && c.CandI.HasBoth(other1, other2))
+			{
+				if (c3 is not null)
+				{
+					return false; // More than 1 match
+				}
+				c3 = c; // Our current match
+			}
+		}
+
+		return c3 is not null;
 	}
 }

@@ -307,6 +307,36 @@ public struct Candidates : IEnumerable<int>
 		}
 		return true;
 	}
+	/// <summary>Gets the first two candidates. Assumes <see cref="Count"/> is 2.</summary>
+	internal readonly void GetCount2(out int can1, out int can2)
+	{
+		can1 = -1;
+		can2 = -1;
+
+		int counter = 0;
+		for (int i = 0; i < 9; i++)
+		{
+			if (!IsCandidate_Fast(i))
+			{
+				continue;
+			}
+
+			if (counter++ == 0)
+			{
+				can1 = i + 1;
+			}
+			else
+			{
+				can2 = i + 1;
+				break;
+			}
+		}
+	}
+
+	internal readonly bool HasBoth(int can1, int can2)
+	{
+		return IsCandidate_Fast(can1 - 1) && IsCandidate_Fast(can2 - 1);
+	}
 
 	// TODO: Eventually remove..?
 	public readonly IEnumerator<int> GetEnumerator()
@@ -319,7 +349,7 @@ public struct Candidates : IEnumerable<int>
 			}
 		}
 	}
-	IEnumerator IEnumerable.GetEnumerator()
+	readonly IEnumerator IEnumerable.GetEnumerator()
 	{
 		return GetEnumerator();
 	}

@@ -22,13 +22,14 @@ public sealed class Cell
 	public Region Block { get; private set; }
 	public Region Column { get; private set; }
 	public Region Row { get; private set; }
-	/// <summary>The <see cref="NUM_VISIBLE_CELLS"/> cells this cell is grouped with. Block, Row, Column</summary>
-	public ReadOnlyCollection<Cell> VisibleCells { get; private set; }
+	internal readonly Cell[] VisibleI;
 
 	public int Value { get; private set; }
 	internal Candidates CandI;
 
 	public Candidates Candidates => CandI;
+	/// <summary>The <see cref="NUM_VISIBLE_CELLS"/> cells this cell is grouped with. Block, Row, Column</summary>
+	public ReadOnlyCollection<Cell> VisibleCells { get; }
 
 	internal Cell(Puzzle puzzle, int value, SPoint point)
 	{
@@ -39,13 +40,13 @@ public sealed class Cell
 		Point = point;
 
 		CandI = new Candidates(true);
+		VisibleI = new Cell[NUM_VISIBLE_CELLS]; // Will be init in InitVisibleCells
+		VisibleCells = new ReadOnlyCollection<Cell>(VisibleI);
 
 		// Will be set in InitRegions
 		Block = null!;
 		Column = null!;
 		Row = null!;
-		// Will be set in InitVisibleCells
-		VisibleCells = null!;
 	}
 	internal void InitRegions()
 	{
@@ -56,31 +57,29 @@ public sealed class Cell
 	internal void InitVisibleCells()
 	{
 		int counter = 0;
-		var neighbors = new Cell[NUM_VISIBLE_CELLS];
 		for (int i = 0; i < 9; i++)
 		{
 			// Add 8 neighbors from block
 			Cell other = Block[i];
 			if (other != this)
 			{
-				neighbors[counter++] = other;
+				VisibleI[counter++] = other;
 			}
 
 			// Add 6 neighbors from row
 			other = Row[i];
 			if (other.Block != Block)
 			{
-				neighbors[counter++] = other;
+				VisibleI[counter++] = other;
 			}
 
 			// Add 6 neighbors from column
 			other = Column[i];
 			if (other.Block != Block)
 			{
-				neighbors[counter++] = other;
+				VisibleI[counter++] = other;
 			}
 		}
-		VisibleCells = new ReadOnlyCollection<Cell>(neighbors);
 	}
 
 	// TODO: Remove
@@ -137,12 +136,12 @@ public sealed class Cell
 			{
 				CandI.Set(i, true);
 			}
-			ChangeCandidates(VisibleCells, oldValue, remove: false);
+			Candidates.Set(VisibleI, oldValue, true);
 		}
 		else
 		{
 			CandI = new Candidates(false);
-			ChangeCandidates(VisibleCells, newValue);
+			Candidates.Set(VisibleI, newValue, false);
 		}
 
 		if (refreshOtherCellCandidates)
@@ -193,22 +192,22 @@ public sealed class Cell
 	}
 #endif
 
-	/*/// <summary>Returns the visible cells that this cell and <paramref name="other"/> share.
+	/// <summary>Returns the visible cells that this cell and <paramref name="other"/> share.
 	/// Result length is 2 (1 row + 1 column) or 7 (7 row/column) or 13 (7 block + 6 row/column)</summary>
 	internal Span<Cell> IntersectVisibleCells(Cell other, Span<Cell> cache)
 	{
 		int counter = 0;
-		for (int i = 0; i < NUM_VISIBLE_CELLS; i++)
+		for (int i = 0; i < VisibleI.Length; i++)
 		{
-			Cell cell = VisibleCells[i];
-			if (other.VisibleCells.Contains(cell))
+			Cell cell = VisibleI[i];
+			if (Array.IndexOf(other.VisibleI, cell) != -1)
 			{
 				cache[counter++] = cell;
 			}
 		}
 		return cache.Slice(0, counter);
 	}
-	/// <summary>Returns the visible cells that this cell, <paramref name="otherA"/>, and <paramref name="otherB"/> all share.
+	/*/// <summary>Returns the visible cells that this cell, <paramref name="otherA"/>, and <paramref name="otherB"/> all share.
 	/// Result length is 0 or 1 (1 row/column) or 6 (6 block/row/column) or 12 (6 block + 6 row/column)</summary>
 	internal Span<Cell> IntersectVisibleCells(Cell otherA, Cell otherB, Span<Cell> cache)
 	{

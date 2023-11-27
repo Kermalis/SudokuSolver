@@ -37,7 +37,7 @@ public sealed class Region : IEnumerable<Cell>
 		return -1;
 	}
 
-	/// <summary>Result length is [0, 9]</summary>
+	/// <summary>Result length is [0,9]</summary>
 	internal Span<Cell> GetCellsWithCandidate(int digit, Span<Cell> cache)
 	{
 		return Candidates.GetCellsWithCandidate(_cells, digit, cache);
@@ -51,7 +51,7 @@ public sealed class Region : IEnumerable<Cell>
 		return _cells.Where(c => c.CandI.ContainsAll(candidates));
 	}
 
-	/*/// <summary>Result length is [0,9]</summary>
+	/// <summary>Result length is [0,9]</summary>
 	internal Span<Cell> GetCellsWithCandidateCount(int numCandidates, Span<Cell> cache)
 	{
 		int counter = 0;
@@ -64,7 +64,7 @@ public sealed class Region : IEnumerable<Cell>
 			}
 		}
 		return cache.Slice(0, counter);
-	}*/
+	}
 	internal int CountCellsWithCandidates()
 	{
 		int counter = 0;
@@ -101,6 +101,7 @@ public sealed class Region : IEnumerable<Cell>
 		return Except(other._cells, cache);
 	}
 
+	/// <summary>Returns true if this region has more than one cell with the value of <paramref name="digit"/>.</summary>
 	internal bool CheckForDuplicateValue(int digit)
 	{
 		bool foundValueAlready = false;

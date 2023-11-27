@@ -42,7 +42,7 @@ partial class Solver
 		}
 
 		// Check which blocks the cells belong to.
-		Span<int> blockIndices = _intCache.AsSpan(0, cellsWithCandidates.Length);
+		Span<int> blockIndices = stackalloc int[3];
 		blockIndices = Utils.GetDistinctBlockIndices(cellsWithCandidates, blockIndices);
 
 		// If they are in the same block, we can remove the candidate from other cells in the block.
@@ -57,7 +57,7 @@ partial class Solver
 
 		// Grab the cells in the block that don't belong to the col/row we scanned. They cannot have this candidate.
 		// Up to 6 cells can have candidates changed.
-		Span<Cell> cellsToChange = _cellCache.AsSpan(cellsWithCandidates.Length, 6);
+		Span<Cell> cellsToChange = _cellCache.AsSpan(3, 6);
 		cellsToChange = block.Except(region, cellsToChange);
 
 		if (Candidates.Set(cellsToChange, candidate, false))
