@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System;
 
 namespace Kermalis.SudokuSolver;
 
@@ -8,23 +7,34 @@ partial class Solver
 	private bool HiddenSingle()
 	{
 		bool changed = false;
+		bool restartSearch;
 
-		for (int i = 0; i < 9; i++)
+		do
 		{
-			foreach (ReadOnlyCollection<Region> region in Puzzle.Regions)
+			restartSearch = false;
+
+			foreach (Region[] regions in Puzzle.RegionsI)
 			{
-				for (int candidate = 1; candidate <= 9; candidate++)
+				foreach (Region region in regions)
 				{
-					Cell[] c = region[i].GetCellsWithCandidate(candidate).ToArray();
-					if (c.Length == 1)
+					for (int digit = 1; digit <= 9; digit++)
 					{
-						c[0].Set(candidate);
-						LogAction(TechniqueFormat("Hidden single", "{0}: {1}", c[0], candidate), c[0]);
-						changed = true;
+						Span<Cell> c = region.GetCellsWithCandidate(digit, _cellCache);
+						if (c.Length == 1)
+						{
+							c[0].SetValue(digit);
+							LogAction(TechniqueFormat("Hidden single",
+								"{0}: {1}",
+								c[0], digit),
+								c[0]);
+							changed = true;
+							restartSearch = true;
+						}
 					}
 				}
 			}
-		}
+
+		} while (restartSearch);
 
 		return changed;
 	}

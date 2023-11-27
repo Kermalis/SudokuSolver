@@ -12,10 +12,10 @@ partial class Solver
 		{
 			for (int x1 = 0; x1 < 9; x1++)
 			{
-				Region c1 = Puzzle.Columns[x1];
+				Region c1 = Puzzle.ColumnsI[x1];
 				for (int x2 = x1 + 1; x2 < 9; x2++)
 				{
-					Region c2 = Puzzle.Columns[x2];
+					Region c2 = Puzzle.ColumnsI[x2];
 					for (int y1 = 0; y1 < 9; y1++)
 					{
 						for (int y2 = y1 + 1; y2 < 9; y2++)
@@ -82,7 +82,7 @@ partial class Solver
 											Cell cell = notSet.ElementAt(0);
 											if (cell.CandI.Count == 2)
 											{
-												cell.Set(cell.CandI.Except(candidates).ElementAt(0));
+												cell.SetValue(cell.CandI.Except(candidates).ElementAt(0));
 											}
 											else
 											{

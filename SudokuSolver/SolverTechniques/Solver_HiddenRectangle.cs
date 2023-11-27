@@ -10,10 +10,10 @@ partial class Solver
 	{
 		for (int x1 = 0; x1 < 9; x1++)
 		{
-			Region c1 = Puzzle.Columns[x1];
+			Region c1 = Puzzle.ColumnsI[x1];
 			for (int x2 = x1 + 1; x2 < 9; x2++)
 			{
-				Region c2 = Puzzle.Columns[x2];
+				Region c2 = Puzzle.ColumnsI[x2];
 				for (int y1 = 0; y1 < 9; y1++)
 				{
 					for (int y2 = y1 + 1; y2 < 9; y2++)
@@ -43,13 +43,13 @@ partial class Solver
 									int why = c.Point.Row == y1 ? y2 : y1;
 									foreach (int i in candidates)
 									{
-										if (!Puzzle.Rows[why].GetCellsWithCandidate(i).Except(cells).Any() // "i" only appears in our UR
-											&& !Puzzle.Columns[eks].GetCellsWithCandidate(i).Except(cells).Any())
+										if (!Puzzle.RowsI[why].GetCellsWithCandidate(i).Except(cells).Any() // "i" only appears in our UR
+											&& !Puzzle.ColumnsI[eks].GetCellsWithCandidate(i).Except(cells).Any())
 										{
 											Cell diag = Puzzle[eks, why];
 											if (diag.CandI.Count == 2)
 											{
-												diag.Set(i);
+												diag.SetValue(i);
 											}
 											else
 											{

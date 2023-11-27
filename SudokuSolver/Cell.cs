@@ -50,9 +50,9 @@ public sealed class Cell
 	}
 	internal void InitRegions()
 	{
-		Block = Puzzle.Blocks[Point.BlockIndex];
-		Column = Puzzle.Columns[Point.Column];
-		Row = Puzzle.Rows[Point.Row];
+		Block = Puzzle.BlocksI[Point.BlockIndex];
+		Column = Puzzle.ColumnsI[Point.Column];
+		Row = Puzzle.RowsI[Point.Row];
 	}
 	internal void InitVisibleCells()
 	{
@@ -125,7 +125,7 @@ public sealed class Cell
 
 	/// <summary>Changes the current value to <paramref name="newValue"/>. <see cref="CandI"/> is updated.
 	/// If <paramref name="refreshOtherCellCandidates"/> is true, the entire puzzle's candidates are refreshed.</summary>
-	internal void Set(int newValue, bool refreshOtherCellCandidates = false)
+	internal void SetValue(int newValue, bool refreshOtherCellCandidates = false)
 	{
 		int oldValue = Value;
 		Value = newValue;
@@ -157,7 +157,7 @@ public sealed class Cell
 		}
 
 		OriginalValue = value;
-		Set(value, refreshOtherCellCandidates: true);
+		SetValue(value, refreshOtherCellCandidates: true);
 	}
 
 	public override int GetHashCode()

@@ -16,8 +16,8 @@ partial class Solver
 		{
 			for (int r = 0; r < 3; r++)
 			{
-				blockrow[r] = [.. Puzzle.Blocks[r + (i * 3)]];
-				blockcol[r] = [.. Puzzle.Blocks[i + (r * 3)]];
+				blockrow[r] = [.. Puzzle.BlocksI[r + (i * 3)]];
+				blockcol[r] = [.. Puzzle.BlocksI[i + (r * 3)]];
 			}
 
 			for (int r = 0; r < 3; r++) // 3 blocks in a blockrow/blockcolumn

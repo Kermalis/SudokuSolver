@@ -46,10 +46,6 @@ public sealed class Region : IEnumerable<Cell>
 	{
 		return _cells.Where(c => c.CandI.Contains(candidate));
 	}
-	public IEnumerable<Cell> GetCellsWithCandidates(params int[] candidates)
-	{
-		return _cells.Where(c => c.CandI.ContainsAll(candidates));
-	}
 
 	/// <summary>Result length is [0,9]</summary>
 	internal Span<Cell> GetCellsWithCandidateCount(int numCandidates, Span<Cell> cache)

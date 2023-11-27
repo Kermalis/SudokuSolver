@@ -10,9 +10,9 @@ partial class Solver
 	{
 		for (int i = 0; i < 9; i++)
 		{
-			if (NakedTuple_Find(Puzzle.Blocks[i], 4)
-				|| NakedTuple_Find(Puzzle.Rows[i], 4)
-				|| NakedTuple_Find(Puzzle.Columns[i], 4))
+			if (NakedTuple_Find(Puzzle.BlocksI[i], 4)
+				|| NakedTuple_Find(Puzzle.RowsI[i], 4)
+				|| NakedTuple_Find(Puzzle.ColumnsI[i], 4))
 			{
 				return true;
 			}
@@ -24,9 +24,9 @@ partial class Solver
 	{
 		for (int i = 0; i < 9; i++)
 		{
-			if (NakedTuple_Find(Puzzle.Blocks[i], 3)
-				|| NakedTuple_Find(Puzzle.Rows[i], 3)
-				|| NakedTuple_Find(Puzzle.Columns[i], 3))
+			if (NakedTuple_Find(Puzzle.BlocksI[i], 3)
+				|| NakedTuple_Find(Puzzle.RowsI[i], 3)
+				|| NakedTuple_Find(Puzzle.ColumnsI[i], 3))
 			{
 				return true;
 			}
@@ -38,9 +38,9 @@ partial class Solver
 	{
 		for (int i = 0; i < 9; i++)
 		{
-			if (NakedTuple_Find(Puzzle.Blocks[i], 2)
-				|| NakedTuple_Find(Puzzle.Rows[i], 2)
-				|| NakedTuple_Find(Puzzle.Columns[i], 2))
+			if (NakedTuple_Find(Puzzle.BlocksI[i], 2)
+				|| NakedTuple_Find(Puzzle.RowsI[i], 2)
+				|| NakedTuple_Find(Puzzle.ColumnsI[i], 2))
 			{
 				return true;
 			}

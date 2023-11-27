@@ -113,7 +113,7 @@ public sealed partial class Solver
 				solved = false;
 				if (cell.CandI.TryGetCount1(out int nakedSingle))
 				{
-					cell.Set(nakedSingle);
+					cell.SetValue(nakedSingle);
 
 					LogAction(TechniqueFormat("Naked single",
 						"{0}: {1}",

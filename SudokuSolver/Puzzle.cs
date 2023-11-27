@@ -14,6 +14,10 @@ public sealed class Puzzle
 
 	public bool IsCustom { get; }
 	private readonly Cell[] _board;
+	internal readonly Region[] RowsI;
+	internal readonly Region[] ColumnsI;
+	internal readonly Region[] BlocksI;
+	internal readonly Region[][] RegionsI;
 
 	public Cell this[int col, int row] => _board[Utils.CellIndex(col, row)];
 
@@ -30,24 +34,30 @@ public sealed class Puzzle
 			}
 		}
 
-		var rows = new Region[9];
-		var columns = new Region[9];
-		var blocks = new Region[9];
-		var cells = new Cell[9];
+		RowsI = new Region[9];
+		Rows = new ReadOnlyCollection<Region>(RowsI);
+		ColumnsI = new Region[9];
+		Columns = new ReadOnlyCollection<Region>(ColumnsI);
+		BlocksI = new Region[9];
+		Blocks = new ReadOnlyCollection<Region>(BlocksI);
+		RegionsI = [RowsI, ColumnsI, BlocksI];
+		Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>([Rows, Columns, Blocks]);
+
+		var cellsCache = new Cell[9];
 		for (int i = 0; i < 9; i++)
 		{
 			int j;
 			for (j = 0; j < 9; j++)
 			{
-				cells[j] = _board[Utils.CellIndex(j, i)];
+				cellsCache[j] = _board[Utils.CellIndex(j, i)];
 			}
-			rows[i] = new Region(cells);
+			RowsI[i] = new Region(cellsCache);
 
 			for (j = 0; j < 9; j++)
 			{
-				cells[j] = _board[Utils.CellIndex(i, j)];
+				cellsCache[j] = _board[Utils.CellIndex(i, j)];
 			}
-			columns[i] = new Region(cells);
+			ColumnsI[i] = new Region(cellsCache);
 
 			j = 0;
 			int x = i % 3 * 3;
@@ -56,18 +66,11 @@ public sealed class Puzzle
 			{
 				for (int row = y; row < y + 3; row++)
 				{
-					cells[j++] = _board[Utils.CellIndex(col, row)];
+					cellsCache[j++] = _board[Utils.CellIndex(col, row)];
 				}
 			}
-			blocks[i] = new Region(cells);
+			BlocksI[i] = new Region(cellsCache);
 		}
-
-		Regions = new ReadOnlyCollection<ReadOnlyCollection<Region>>(new ReadOnlyCollection<Region>[3]
-		{
-			Rows = new ReadOnlyCollection<Region>(rows),
-			Columns = new ReadOnlyCollection<Region>(columns),
-			Blocks = new ReadOnlyCollection<Region>(blocks)
-		});
 
 		for (int i = 0; i < 81; i++)
 		{
@@ -94,7 +97,7 @@ public sealed class Puzzle
 			Cell cell = _board[i];
 			if (cell.Value != Cell.EMPTY_VALUE)
 			{
-				cell.Set(cell.Value);
+				cell.SetValue(cell.Value);
 			}
 		}
 	}
@@ -152,7 +155,7 @@ public sealed class Puzzle
 			Cell cell = _board[i];
 			if (cell.Value != cell.OriginalValue)
 			{
-				cell.Set(Cell.EMPTY_VALUE);
+				cell.SetValue(Cell.EMPTY_VALUE);
 			}
 		}
 	}
@@ -163,9 +166,9 @@ public sealed class Puzzle
 		{
 			for (int i = 0; i < 9; i++)
 			{
-				if (Blocks[i].CheckForDuplicateValue(digit)
-					|| Rows[i].CheckForDuplicateValue(digit)
-					|| Columns[i].CheckForDuplicateValue(digit))
+				if (BlocksI[i].CheckForDuplicateValue(digit)
+					|| RowsI[i].CheckForDuplicateValue(digit)
+					|| ColumnsI[i].CheckForDuplicateValue(digit))
 				{
 					return true;
 				}

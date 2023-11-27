@@ -10,7 +10,7 @@ partial class Solver
 	{
 		for (int i = 0; i < 9; i++)
 		{
-			if (YWing_Find(Puzzle.Rows[i]) || YWing_Find(Puzzle.Columns[i]))
+			if (YWing_Find(Puzzle.RowsI[i]) || YWing_Find(Puzzle.ColumnsI[i]))
 			{
 				return true;
 			}

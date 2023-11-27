@@ -12,10 +12,10 @@ partial class Solver
 		{
 			for (int x1 = 0; x1 < 9; x1++)
 			{
-				Region c1 = Puzzle.Columns[x1];
+				Region c1 = Puzzle.ColumnsI[x1];
 				for (int x2 = x1 + 1; x2 < 9; x2++)
 				{
-					Region c2 = Puzzle.Columns[x2];
+					Region c2 = Puzzle.ColumnsI[x2];
 					for (int y1 = 0; y1 < 9; y1++)
 					{
 						for (int y2 = y1 + 1; y2 < 9; y2++)
@@ -86,7 +86,7 @@ partial class Solver
 										{
 											if (gtTwo[0].CandI.Count == 3)
 											{
-												gtTwo[0].Set(gtTwo[0].CandI.Single(c => !candidates.Contains(c)));
+												gtTwo[0].SetValue(gtTwo[0].CandI.Single(c => !candidates.Contains(c)));
 											}
 											else
 											{
@@ -118,7 +118,7 @@ partial class Solver
 												continue;
 											}
 											IEnumerable<Cell> nSubset = ((gtTwo[0].Point.Row == gtTwo[1].Point.Row) ? // Same row
-														Puzzle.Rows[gtTwo[0].Point.Row] : Puzzle.Columns[gtTwo[0].Point.Column])
+														Puzzle.RowsI[gtTwo[0].Point.Row] : Puzzle.ColumnsI[gtTwo[0].Point.Column])
 														.Where(c => c.CandI.ContainsAny(others) && !c.CandI.ContainsAny(Utils.OneToNine.Except(others)));
 											if (nSubset.Count() != others.Count() - 1)
 											{
@@ -135,11 +135,11 @@ partial class Solver
 											int[] remove = new int[1];
 											if (four[0].Point.BlockIndex == three[0].Point.BlockIndex)
 											{
-												if (Puzzle.Blocks[four[0].Point.BlockIndex].GetCellsWithCandidate(value1).Count() == 2)
+												if (Puzzle.BlocksI[four[0].Point.BlockIndex].GetCellsWithCandidate(value1).Count() == 2)
 												{
 													remove[0] = value2;
 												}
-												else if (Puzzle.Blocks[four[0].Point.BlockIndex].GetCellsWithCandidate(value2).Count() == 2)
+												else if (Puzzle.BlocksI[four[0].Point.BlockIndex].GetCellsWithCandidate(value2).Count() == 2)
 												{
 													remove[0] = value1;
 												}
@@ -148,22 +148,22 @@ partial class Solver
 											{
 												if (three[0].Point.Column == three[0].Point.Column)
 												{
-													if (Puzzle.Columns[four[0].Point.Column].GetCellsWithCandidate(value1).Count() == 2)
+													if (Puzzle.ColumnsI[four[0].Point.Column].GetCellsWithCandidate(value1).Count() == 2)
 													{
 														remove[0] = value2;
 													}
-													else if (Puzzle.Columns[four[0].Point.Column].GetCellsWithCandidate(value2).Count() == 2)
+													else if (Puzzle.ColumnsI[four[0].Point.Column].GetCellsWithCandidate(value2).Count() == 2)
 													{
 														remove[0] = value1;
 													}
 												}
 												else
 												{
-													if (Puzzle.Rows[four[0].Point.Row].GetCellsWithCandidate(value1).Count() == 2)
+													if (Puzzle.RowsI[four[0].Point.Row].GetCellsWithCandidate(value1).Count() == 2)
 													{
 														remove[0] = value2;
 													}
-													else if (Puzzle.Rows[four[0].Point.Row].GetCellsWithCandidate(value2).Count() == 2)
+													else if (Puzzle.RowsI[four[0].Point.Row].GetCellsWithCandidate(value2).Count() == 2)
 													{
 														remove[0] = value1;
 													}
@@ -196,14 +196,14 @@ partial class Solver
 											}
 											int set;
 											if (c1.GetCellsWithCandidate(value1).Count() == 2 && c2.GetCellsWithCandidate(value1).Count() == 2 // Check if "v" only appears in the UR
-												&& Puzzle.Rows[two[0].Point.Row].GetCellsWithCandidate(value1).Count() == 2
-													&& Puzzle.Rows[two[1].Point.Row].GetCellsWithCandidate(value1).Count() == 2)
+												&& Puzzle.RowsI[two[0].Point.Row].GetCellsWithCandidate(value1).Count() == 2
+													&& Puzzle.RowsI[two[1].Point.Row].GetCellsWithCandidate(value1).Count() == 2)
 											{
 												set = value1;
 											}
 											else if (c1.GetCellsWithCandidate(value2).Count() == 2 && c2.GetCellsWithCandidate(value2).Count() == 2
-												&& Puzzle.Rows[two[0].Point.Row].GetCellsWithCandidate(value2).Count() == 2
-													&& Puzzle.Rows[two[1].Point.Row].GetCellsWithCandidate(value2).Count() == 2)
+												&& Puzzle.RowsI[two[0].Point.Row].GetCellsWithCandidate(value2).Count() == 2
+													&& Puzzle.RowsI[two[1].Point.Row].GetCellsWithCandidate(value2).Count() == 2)
 											{
 												set = value2;
 											}
@@ -211,8 +211,8 @@ partial class Solver
 											{
 												continue;
 											}
-											two[0].Set(set);
-											two[1].Set(set);
+											two[0].SetValue(set);
+											two[1].SetValue(set);
 											break;
 										}
 									}

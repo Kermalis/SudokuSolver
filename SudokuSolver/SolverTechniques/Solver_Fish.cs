@@ -39,8 +39,8 @@ partial class Solver
 	{
 		if (loop == amount)
 		{
-			IEnumerable<IEnumerable<Cell>> rowCells = indexes.Select(i => Puzzle.Rows[i].GetCellsWithCandidate(candidate));
-			IEnumerable<IEnumerable<Cell>> colCells = indexes.Select(i => Puzzle.Columns[i].GetCellsWithCandidate(candidate));
+			IEnumerable<IEnumerable<Cell>> rowCells = indexes.Select(i => Puzzle.RowsI[i].GetCellsWithCandidate(candidate));
+			IEnumerable<IEnumerable<Cell>> colCells = indexes.Select(i => Puzzle.ColumnsI[i].GetCellsWithCandidate(candidate));
 
 			IEnumerable<int> rowLengths = rowCells.Select(cells => cells.Count());
 			IEnumerable<int> colLengths = colCells.Select(parr => parr.Count());
@@ -48,7 +48,7 @@ partial class Solver
 			if (rowLengths.Max() == amount && rowLengths.Min() > 0 && rowCells.Select(cells => cells.Select(c => c.Point.Column)).UniteAll().Count() <= amount)
 			{
 				IEnumerable<Cell> row2D = rowCells.UniteAll();
-				if (Cell.ChangeCandidates(row2D.Select(c => Puzzle.Columns[c.Point.Column]).UniteAll().Except(row2D), candidate))
+				if (Cell.ChangeCandidates(row2D.Select(c => Puzzle.ColumnsI[c.Point.Column]).UniteAll().Except(row2D), candidate))
 				{
 					LogAction(TechniqueFormat(FishStr[amount], "{0}: {1}", row2D.Print(), candidate), row2D);
 					return true;
@@ -57,7 +57,7 @@ partial class Solver
 			if (colLengths.Max() == amount && colLengths.Min() > 0 && colCells.Select(cells => cells.Select(c => c.Point.Row)).UniteAll().Count() <= amount)
 			{
 				IEnumerable<Cell> col2D = colCells.UniteAll();
-				if (Cell.ChangeCandidates(col2D.Select(c => Puzzle.Rows[c.Point.Row]).UniteAll().Except(col2D), candidate))
+				if (Cell.ChangeCandidates(col2D.Select(c => Puzzle.RowsI[c.Point.Row]).UniteAll().Except(col2D), candidate))
 				{
 					LogAction(TechniqueFormat(FishStr[amount], "{0}: {1}", col2D.Print(), candidate), col2D);
 					return true;

@@ -29,7 +29,7 @@ partial class Solver
 	private bool LockedCandidate_Find(int i, int candidate, bool doRows)
 	{
 		// Grab the row or column we will scan.
-		Region region = (doRows ? Puzzle.Rows : Puzzle.Columns)[i];
+		Region region = (doRows ? Puzzle.RowsI : Puzzle.ColumnsI)[i];
 
 		// Grab the cells in this row/col that still have the candidate we're looking for.
 		Span<Cell> cellsWithCandidates = _cellCache.AsSpan(0, 9);
@@ -53,7 +53,7 @@ partial class Solver
 
 		// Grab the block they're in.
 		int blockIndex = blockIndices[0];
-		Region block = Puzzle.Blocks[blockIndex];
+		Region block = Puzzle.BlocksI[blockIndex];
 
 		// Grab the cells in the block that don't belong to the col/row we scanned. They cannot have this candidate.
 		// Up to 6 cells can have candidates changed.
